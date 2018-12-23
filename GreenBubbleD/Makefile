@@ -26,7 +26,7 @@ CFLAGS		= -c -Wall $(DEBUG) -Winline -pipe
 CC=gcc
 
 SOURCES		= main.c
-#LDFLAGS		= -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt
+LDFLAGS		= -lwiringPi -lpthread -lm -lcrypt -lrt
 
 
 # ------------ MAGIC BEGINS HERE -------------

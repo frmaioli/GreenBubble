@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 
-//#include <wiringPi.h>
+#include <wiringPi.h>
 
 static void daemon_init()
 {
@@ -85,14 +85,14 @@ static void daemon_init()
 int main()
 {
     daemon_init();
-//    wiringPiSetup();
+    wiringPiSetup();
 
     while (1)
     {
         //TODO: Insert daemon code here.
         syslog (LOG_NOTICE, "GreenBubble daemon started.");
         sleep (20);
-        //break;
+        break;
     }
 
     syslog (LOG_NOTICE, "GreenBubble daemon terminated.");
