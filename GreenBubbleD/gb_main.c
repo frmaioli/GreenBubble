@@ -1,5 +1,5 @@
 /*
- * main.c:
+ * gb_main.c:
  *	Main loop for the GreenBubble project
  *
  * Copyright (c) 2018-2019 Fabiano R. Maioli <frmaioli@gmail.com>
@@ -28,6 +28,9 @@
 #include <syslog.h>
 
 #include <wiringPi.h>
+
+#include <gb_main.h>
+#include <gb_serial.h>
 
 static void daemon_init()
 {
@@ -79,23 +82,30 @@ static void daemon_init()
     }
 
     /* Open the log file */
-    openlog ("GreenBubbleD", LOG_PID, LOG_DAEMON);
+    openlog("GreenBubbleD", LOG_PID, LOG_DAEMON);
 }
 
 int main()
 {
+    // Initialiye the Daemon
     daemon_init();
-    wiringPiSetup();
+
+    // Initialiye the WiringPi library
+    wiringPiSetupGpio();
+
+    // Initialiye the UART to communicate with Led Drivers
+    if (ld_serial_init() < 0)
+		syslog(LOG_CRIT, "GreenBubble: Unable to open serial device.");
 
     while (1)
     {
         //TODO: Insert daemon code here.
-        syslog (LOG_NOTICE, "GreenBubble daemon started.");
+        syslog(LOG_NOTICE, "GreenBubble daemon started.");
         sleep (20);
         break;
     }
 
-    syslog (LOG_NOTICE, "GreenBubble daemon terminated.");
+    syslog(LOG_NOTICE, "GreenBubble daemon terminated.");
     closelog();
 
     return EXIT_SUCCESS;
