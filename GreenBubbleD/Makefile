@@ -19,13 +19,13 @@
 
 PROJECT		= GreenBubbleD
 LIBRARY		= nope
-INCPATHS	= ./include /usr/local/include
+INCPATHS	= ./ /usr/local/include
 LIBPATHS	= ./lib /usr/lib /usr/local/lib
 DEBUG		= -O3
 CFLAGS		= -c -Wall $(DEBUG) -Winline -pipe
 CC=gcc
 
-SOURCES		= main.c
+SOURCES		= gb_main.c gb_serial.c
 LDFLAGS		= -lwiringPi -lpthread -lm -lcrypt -lrt
 
 

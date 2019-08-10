@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#Open code
+cd ..
+ctags -R
+gvim GreenBubble/GreenBubbleD/Makefile GreenBubble/GreenBubbleD/*.[ch] &
+gvim b3603/README.md b3603/stm8/Makefile b3603/stm8/*.[ch] b3603/stm8/*.py &
+
+#Discover Raspberry Pi IP address
+RASP_IP=$(nmap -sP 192.168.1.0/24 >/dev/null && arp -an | grep b8:27:eb:00:71:b9 | awk '{print $2}' | sed 's/[()]//g')
+
+#Open filezila
+filezilla sftp://pi:pegasus@$RASP_IP &
+
+#Connect to Pi
+vncviewer $RASP_IP &
+#log with pi/pegasus

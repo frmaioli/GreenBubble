@@ -95,7 +95,7 @@ int main()
 
     // Initialiye the UART to communicate with Led Drivers
     if (ld_serial_init() < 0)
-		syslog(LOG_CRIT, "GreenBubble: Unable to open serial device.");
+        syslog(LOG_CRIT, "GreenBubble: Unable to open serial device.");
 
     while (1)
     {

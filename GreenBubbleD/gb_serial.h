@@ -22,10 +22,20 @@
 #ifndef GB_SERIAL_H
 #define GB_SERIAL_H
 
+#include "gb_main.h"
+
 typedef enum {
     LD_WHITE = 1,
     LD_BLUE,
-	LD_RED
+    LD_RED
 } ldBoard_t;
+
+int ld_get_system(ldBoard_t color, ldSys_t *sys);
+int ld_get_config(ldBoard_t color, ldSys_t *sys, ldCfg_t *cfg);
+int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys);
+int ld_set_voltage(ldBoard_t color, unsigned int voltage);
+int ld_set_current(ldBoard_t color, unsigned int current);
+int ld_set_output(ldBoard_t color, bool output);
+int ld_serial_init();
 
 #endif //GB_SERIAL_H

@@ -25,7 +25,7 @@
 #include <wiringPi.h>
 #include <wiringSerial.h>
 
-#include "gb_main.h"
+#include "gb_serial.h"
 
 int Fd;
 char Rd_buffer[512];
@@ -33,15 +33,15 @@ char Rd_buffer[512];
 static void ld_select_driver(ldBoard_t color)
 {
     switch (color) {
-        case WHITE:
+        case LD_WHITE:
             digitalWrite(GPIO_17, LOW);
             digitalWrite(GPIO_18, LOW);
             break;
-        case BLUE:
+        case LD_BLUE:
             digitalWrite(GPIO_17, LOW);
             digitalWrite(GPIO_18, HIGH);
             break;
-        case RED:
+        case LD_RED:
             digitalWrite(GPIO_17, HIGH);
             digitalWrite(GPIO_18, LOW);
             break;
@@ -56,9 +56,9 @@ static int ld_read_feedback()
     while ((millis() - start) < 10) {
         if (serialDataAvail(Fd)) {
              Rd_buffer[i] = serialGetchar(Fd);
-             if ((i >= 2) && (strncmp(Rd_buffer[i-2], "OK\n", 3) == 0))
+             if ((i >= 2) && (strncmp((Rd_buffer + i-2), "OK\n", 3) == 0))
                  break;
-             if ((i >= 2) && (strncmp(Rd_buffer[i-2], "E!\n", 3) == 0)) {
+             if ((i >= 2) && (strncmp((Rd_buffer + i-2), "E!\n", 3) == 0)) {
                  errno = EIO;
                  break;
              }
@@ -79,11 +79,11 @@ static int ld_read_feedback()
     return 0;
 }
 
-static int ld_onoff2bool(char str_sts, bool *bool_sts)
+static int ld_onoff2bool(char *str_sts, bool *bool_sts)
 {
-    if (strncmp(sts, "ON", 2) == 0)
+    if (strncmp(str_sts, "ON", 2) == 0)
         *bool_sts = TRUE;
-    else if (strncmp(sts, "OFF", 3) == 0)
+    else if (strncmp(str_sts, "OFF", 3) == 0)
         *bool_sts = FALSE;
     else {
         errno = EINVAL;
@@ -115,7 +115,7 @@ int ld_get_system(ldBoard_t color, ldSys_t *sys)
     return 0;
 }
 
-int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
+int ld_get_config(ldBoard_t color, ldSys_t *sys, ldCfg_t *cfg)
 {
     char sts1[5];
 
@@ -136,7 +136,7 @@ int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
     return 0;
 }
 
-int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys))
+int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys)
 {
     char sts1[5], sts2[10];
 
@@ -156,9 +156,9 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys))
     if (ld_onoff2bool(sts1, &sys->output)) return -1;
 
     if (strncmp(sts2, "VOLTAGE", 7) == 0)
-        *sts->constant_current = FALSE;
+        sts->constant_current = FALSE;
     else if (strncmp(sts2, "CURRENT", 7) == 0)
-        *sts->constant_current = TRUE;
+        sts->constant_current = TRUE;
     else {
         errno = EIO;
         return -1;
@@ -206,10 +206,11 @@ int ld_set_output(ldBoard_t color, bool output)
     return 0;
 }
 
-int ld_serial_init() {
+int ld_serial_init()
+{
 	Fd = serialOpen("/dev/ttyAMA0", 38400);
 	if (Fd < 0)
-		fprintf (stderr, "Unable to open serial device: %s\n", strerror(errno)) ;
+		fprintf (stderr, "Unable to open serial device: %s\n", strerror(errno));
 		
 	return Fd;
 }
