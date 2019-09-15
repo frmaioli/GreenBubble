@@ -24,6 +24,8 @@
 
 #include <stdbool.h>
 
+#define MAX_LIMIT(VALUE, LIMIT) (VALUE > LIMIT) ? LIMIT : VALUE
+
 typedef enum {
     GPIO_02 = 2, // I2C SDA
     GPIO_03 = 3, // I2C SCL
@@ -53,21 +55,30 @@ typedef enum {
     GPIO_27 = 27
 } PiGpio_t;
 
+#define LD_NUMB 3
+typedef enum {
+    LD_WHITE = 0,
+    LD_BLUE,
+    LD_RED
+} ldBoard_t;
+
 typedef struct {
     char model[10];
     char version[10];
     char name[17];
     bool default_on;
-    bool output;
     bool autocommit;
+    unsigned int max_curr; //mA
 } ldSys_t;
 
 typedef struct {
+    bool enable;
     float vset; // V: 2.321
     float cset; // A: 0.755
 } ldCfg_t;
 
 typedef struct {
+    bool enable;
     unsigned int vin_raw;
     unsigned int vout_raw;
     unsigned int cout_raw;
@@ -76,5 +87,29 @@ typedef struct {
     float cout; // A: 0.755
     bool constant_current; // If false, we are in constant voltage
 } ldSts_t;
+
+/***************** STATUS *******************/
+
+typedef struct {
+    float temp_air;
+    float temp_water;
+    float humidity_air;
+    ldSts_t ld_sts[LD_NUMB];
+    //...
+} gbSts_t;
+
+extern gbSts_t Gb_sts;
+
+
+/***************** CONFIG *******************/
+#define TIME_LD 1 //in Minuts
+typedef struct {
+    unsigned char ld_routine_perc[LD_NUMB][(1440/TIME_LD)];    //144 = 1 each 10min for 24hs
+    ldCfg_t ld_instant[LD_NUMB];
+} gbCfg_t;
+
+extern ldSys_t Gb_ld_sys[LD_NUMB];
+extern gbCfg_t Gb_cfg;
+extern gbSts_t Gb_sts;
 
 #endif //GB_MAIN_H

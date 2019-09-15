@@ -53,8 +53,22 @@ $ sudo mount 2018-11-13-raspbian-stretch.img -o offset=50331648 /mnt
 But unmount it for safety after:
 $ sudo umount 2018-11-13-raspbian-stretch.img /mnt
 
-
+##Remote Connection and Pi Setup
 Qemu gives you a root shell, run:
 Login as pi
 Password raspberry
+
+Connecting Remotely
+It is easier to connect to the Pi remotely for development than using VM. VNCViewer can be used and also filezilla to transfer files.
+
+Installing Ulfius
+sudo apt install libulfius-dev
+How to use: https://babelouest.github.io/ulfius/API.html
+
+It is not needed to install wiringPi, it comes by default on Raspbian
+
+##Rest Tests
+Use Postman to test the endpoints. They are:
+http://192.168.1.66:8537/GBBL/led/blue/enable/1
+angharad.c and angharad.service.js are good exemples to continue
 

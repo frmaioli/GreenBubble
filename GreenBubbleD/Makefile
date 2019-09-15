@@ -25,8 +25,8 @@ DEBUG		= -O3
 CFLAGS		= -c -Wall $(DEBUG) -Winline -pipe
 CC=gcc
 
-SOURCES		= gb_main.c gb_serial.c
-LDFLAGS		= -lwiringPi -lpthread -lm -lcrypt -lrt
+SOURCES		= gb_main.c gb_serial.c gb_rest.c
+LDFLAGS		= -lwiringPi -lulfius -ljansson -lorcania -lpthread -lm -lcrypt -lrt
 
 
 # ------------ MAGIC BEGINS HERE -------------

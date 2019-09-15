@@ -27,7 +27,7 @@
 
 #include "gb_serial.h"
 
-int Fd;
+int Fd = -1;
 char Rd_buffer[512];
 
 static void ld_select_driver(ldBoard_t color)
@@ -59,14 +59,14 @@ static int ld_read_feedback()
              if ((i >= 2) && (strncmp((Rd_buffer + i-2), "OK\n", 3) == 0))
                  break;
              if ((i >= 2) && (strncmp((Rd_buffer + i-2), "E!\n", 3) == 0)) {
-                 errno = EIO;
+                 errno = EBADMSG;
                  break;
              }
              i++;
         }
     } 
-    if ((errno != 0) || (errno != EIO))
-        errno = EBADMSG;
+    if ((errno != 0) || (errno != EBADMSG))
+        errno = EIO;
 
     Rd_buffer[i+1]='\0';
     serialFlush(Fd);
@@ -97,11 +97,13 @@ int ld_get_system(ldBoard_t color, ldSys_t *sys)
 {
     char sts1[5], sts2[5];
 
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "SYSTEM\n");
+    serialPrintf(Fd, "SYSTEM\n");
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
@@ -115,15 +117,17 @@ int ld_get_system(ldBoard_t color, ldSys_t *sys)
     return 0;
 }
 
-int ld_get_config(ldBoard_t color, ldSys_t *sys, ldCfg_t *cfg)
+int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
 {
     char sts1[5];
 
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "CONFIG\n");
+    serialPrintf(Fd, "CONFIG\n");
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
@@ -131,20 +135,22 @@ int ld_get_config(ldBoard_t color, ldSys_t *sys, ldCfg_t *cfg)
     if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVSET: %f\r\nCSET: %f\r\n", sts1, &cfg->vset, &cfg->cset) == EOF)
         return -1;
     
-    if (ld_onoff2bool(sts1, &sys->output)) return -1;
+    if (ld_onoff2bool(sts1, &cfg->enable)) return -1;
 
     return 0;
 }
 
-int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys)
+int ld_get_status(ldBoard_t color, ldSts_t *sts)
 {
     char sts1[5], sts2[10];
 
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "STATUS\n");
+    serialPrintf(Fd, "STATUS\n");
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
@@ -153,7 +159,7 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys)
             sts1, &sts->vin, &sts->vin_raw, &sts->vout, &sts->vout_raw, &sts->cout, &sts->cout_raw, sts2) == EOF)
         return -1;
     
-    if (ld_onoff2bool(sts1, &sys->output)) return -1;
+    if (ld_onoff2bool(sts1, &sts->enable)) return -1;
 
     if (strncmp(sts2, "VOLTAGE", 7) == 0)
         sts->constant_current = FALSE;
@@ -169,11 +175,13 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts, ldSys_t *sys)
 
 int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 {
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "VOLTAGE %u\n", voltage);
+    serialPrintf(Fd, "VOLTAGE %u\n", voltage);
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
@@ -182,11 +190,13 @@ int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 
 int ld_set_current(ldBoard_t color, unsigned int current)
 {
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "CURRENT %u\n", current);
+    serialPrintf(Fd, "CURRENT %u\n", current);
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
@@ -195,15 +205,30 @@ int ld_set_current(ldBoard_t color, unsigned int current)
 
 int ld_set_output(ldBoard_t color, bool output)
 {
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    
     // Select the Board and send the command
     ld_select_driver(color);
-	serialPrintf(Fd, "OUTPUT %b\n", output);
+    serialPrintf(Fd, "OUTPUT %b\n", output);
 
-	// Get the message
+    // Get the message
     if (ld_read_feedback())
         return -1;
 
     return 0;
+}
+
+int get_curr_from_perc(ldBoard_t color, unsigned char perc)
+{
+    unsigned int curr;
+
+    if (color >= LD_NUMB) return 0;
+    
+    curr = (Gb_ld_sys[color].max_curr * perc)/100;
+    if (curr > Gb_ld_sys[color].max_curr)
+       return Gb_ld_sys[color].max_curr;
+    else
+       return curr; 
 }
 
 int ld_serial_init()

@@ -1,6 +1,6 @@
 /*
- * gb_serial.h:
- *	Serial instructions to communicate with the Led Driveres (ld) for the GreenBubble project
+ * gb_rest.h:
+ *	Web Service with the Rest endpoints for the GreenBubble project
  *
  * Copyright (c) 2018-2019 Fabiano R. Maioli <frmaioli@gmail.com>
  ***********************************************************************
@@ -19,18 +19,12 @@
  ***********************************************************************
  */
 
-#ifndef GB_SERIAL_H
-#define GB_SERIAL_H
+#ifndef GB_REST_H
+#define GB_REST_H
 
-#include "gb_main.h"
+#include <ulfius.h>
 
-int ld_get_system(ldBoard_t color, ldSys_t *sys);
-int ld_get_config(ldBoard_t color, ldCfg_t *cfg);
-int ld_get_status(ldBoard_t color, ldSts_t *sts);
-int ld_set_voltage(ldBoard_t color, unsigned int voltage);
-int ld_set_current(ldBoard_t color, unsigned int current);
-int ld_set_output(ldBoard_t color, bool output);
-int ld_serial_init();
-int get_curr_from_perc(ldBoard_t color, unsigned char perc);
+int rest_ulfius_init (struct _u_instance *instance);
+void rest_ulfius_stop (struct _u_instance *instance);
 
-#endif //GB_SERIAL_H
+#endif //GB_REST_H
