@@ -36,6 +36,20 @@ Check the Daemon is running:
 	The output should be similar to this one:
 	Dec 22 14:06:10 aspire-3810t GreenBubbleD[26138]: GreenBubble daemon started.
 
+- Debugging
+
+Enable the Debug option in the makefile
+GCC can't do that but GDB (a debugger) sure can. Compile you program using the -g switch, like this:
+gcc program.c -g
+Then use gdb:
+$ gdb ./a.out
+(gdb) run
+<segfault happens here>
+(gdb) backtrace
+<offending code is shown here>
+
+ALso, you can check valgrind for memleaks
+valgrind --leak-check=yes ./GreenBubbleD
 
 Emulating Raspberry Pi, so it can be easier to compile and test
 $ mkdir qemu_vms

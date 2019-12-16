@@ -132,7 +132,7 @@ int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
         return -1;
 
     // Parse the result
-    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVSET: %f\r\nCSET: %f\r\n", sts1, &cfg->vset, &cfg->cset) == EOF)
+    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVSET: %u\r\nCSET: %u\r\n", sts1, &cfg->vset, &cfg->cset) == EOF)
         return -1;
     
     if (ld_onoff2bool(sts1, &cfg->enable)) return -1;
@@ -155,7 +155,7 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
         return -1;
 
     // Parse the result
-    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVIN: %f %u\r\nVOUT: %f %u\r\nCOUT: %f %u\r\nCONSTANT: %s\r\n",
+    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVIN: %u %u\r\nVOUT: %u %u\r\nCOUT: %u %u\r\nCONSTANT: %s\r\n",
             sts1, &sts->vin, &sts->vin_raw, &sts->vout, &sts->vout_raw, &sts->cout, &sts->cout_raw, sts2) == EOF)
         return -1;
     
@@ -218,7 +218,7 @@ int ld_set_output(ldBoard_t color, bool output)
     return 0;
 }
 
-int get_curr_from_perc(ldBoard_t color, unsigned char perc)
+unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc)
 {
     unsigned int curr;
 

@@ -31,6 +31,6 @@ int ld_set_voltage(ldBoard_t color, unsigned int voltage);
 int ld_set_current(ldBoard_t color, unsigned int current);
 int ld_set_output(ldBoard_t color, bool output);
 int ld_serial_init();
-int get_curr_from_perc(ldBoard_t color, unsigned char perc);
+unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc);
 
 #endif //GB_SERIAL_H

@@ -21,8 +21,8 @@ PROJECT		= GreenBubbleD
 LIBRARY		= nope
 INCPATHS	= ./ /usr/local/include
 LIBPATHS	= ./lib /usr/lib /usr/local/lib
-DEBUG		= -O3
-CFLAGS		= -c -Wall $(DEBUG) -Winline -pipe
+#DEBUG		= -g -O1
+CFLAGS		= -c -Wall -Winline -pipe -std=c99 $(DEBUG)
 CC=gcc
 
 SOURCES		= gb_main.c gb_serial.c gb_rest.c

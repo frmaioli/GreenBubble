@@ -24,6 +24,14 @@
 
 #include <stdbool.h>
 
+#define DEBUG 1
+#define debug(fmt, ...) \
+            do { if (DEBUG) fprintf(stderr, fmt, ##__VA_ARGS__); } while (0)
+
+#define debugl(fmt, ...) \
+        do { if (DEBUG) fprintf(stderr, "%s:%d:%s(): " fmt, __FILE__, \
+                                __LINE__, __func__, ##__VA_ARGS__); } while (0)
+
 #define MAX_LIMIT(VALUE, LIMIT) (VALUE > LIMIT) ? LIMIT : VALUE
 
 typedef enum {
@@ -73,8 +81,8 @@ typedef struct {
 
 typedef struct {
     bool enable;
-    float vset; // V: 2.321
-    float cset; // A: 0.755
+    unsigned int vset; // mV
+    unsigned int cset; // mA
 } ldCfg_t;
 
 typedef struct {
@@ -82,18 +90,18 @@ typedef struct {
     unsigned int vin_raw;
     unsigned int vout_raw;
     unsigned int cout_raw;
-    float vin;  // V: 35.980
-    float vout; // V: 2.321
-    float cout; // A: 0.755
+    unsigned int vin;  // mV
+    unsigned int vout; // mV
+    unsigned int cout; // mA
     bool constant_current; // If false, we are in constant voltage
 } ldSts_t;
 
 /***************** STATUS *******************/
 
 typedef struct {
-    float temp_air;
-    float temp_water;
-    float humidity_air;
+    int temp_air; //mCelsius
+    int temp_water; //mCelsius
+    unsigned char humidity_air; //%
     ldSts_t ld_sts[LD_NUMB];
     //...
 } gbSts_t;
@@ -102,14 +110,23 @@ extern gbSts_t Gb_sts;
 
 
 /***************** CONFIG *******************/
-#define TIME_LD 1 //in Minuts
+#define TIME_LD    10 //in Minuts
+#define ROUT_STEP  9  //1 each 3 hs - 9 points in a day (repeats 0hr), 8 sessions
+#define ROUT_N     18 //180min/TIME_LD (Points between Steps)
+#define ROUT_TOT   (1440/TIME_LD)
 typedef struct {
-    unsigned char ld_routine_perc[LD_NUMB][(1440/TIME_LD)];    //144 = 1 each 10min for 24hs
+    unsigned char ld_spec[LD_NUMB][ROUT_STEP];
+    unsigned char ld_routine_perc[LD_NUMB][ROUT_TOT];
+    bool ld_routine_init;
     ldCfg_t ld_instant[LD_NUMB];
 } gbCfg_t;
 
 extern ldSys_t Gb_ld_sys[LD_NUMB];
 extern gbCfg_t Gb_cfg;
 extern gbSts_t Gb_sts;
+
+
+/***************** FUNCTIONS *******************/
+void ld_daily_routine(bool update_now);
 
 #endif //GB_MAIN_H

@@ -95,42 +95,52 @@ static void daemon_init()
     openlog("GreenBubbleD", LOG_PID, LOG_DAEMON);
 }
 
-
-static void ld_daily_routine()
+void ld_daily_routine(bool update_now)
 {
     time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    int mins_of_day = tm.tm_hour*60 + tm.tm_min;
+    struct tm tmt = *localtime(&t);
+    int mins_of_day = tmt.tm_hour*60 + tmt.tm_min;
     int ret = 0;
     unsigned char i = 0;
     static int latest_mins = -1;
 
-    //Update lights each 10min
-    if((latest_mins != mins_of_day) & (mins_of_day%TIME_LD == 0)) {
-        //add routine
-        printf("currw %i\n", get_curr_from_perc(LD_WHITE, 30));
-        printf("currb %i\n", get_curr_from_perc(LD_BLUE, 10));
-        printf("currr %i\n", get_curr_from_perc(LD_RED, 50));
-        printf("currerr %i\n", get_curr_from_perc(5, 50));
-        printf("curr100 %i\n", get_curr_from_perc(1, 120));
-        
+    //Check if Cfg was received
+    if (Gb_cfg.ld_routine_init == false)
+        return;
+
+    //Update lights each TIME_LD min
+    if(((latest_mins != mins_of_day) & (mins_of_day%TIME_LD == 0)) || update_now) {
+  
         //Get the value to be applied for this time and limit to 100% for protection
         i = mins_of_day/TIME_LD;
-        if (ld_set_current(LD_WHITE, get_curr_from_perc(LD_WHITE, Gb_cfg.ld_routine_perc[LD_WHITE][i])) < 0)
-            ret |= 1;
+        if (i > ROUT_TOT) {
+           ret |= 1;
+           i = ROUT_TOT;
+        }
+
+  //      if (ld_set_current(LD_WHITE, get_curr_from_perc(LD_WHITE, Gb_cfg.ld_routine_perc[LD_WHITE][i])) < 0)
+    //        ret |= 2;
         
-        if (ld_set_current(LD_BLUE, get_curr_from_perc(LD_BLUE, Gb_cfg.ld_routine_perc[LD_BLUE][i])) < 0)
-            ret |= 2;
+      //  if (ld_set_current(LD_BLUE, get_curr_from_perc(LD_BLUE, Gb_cfg.ld_routine_perc[LD_BLUE][i])) < 0)
+//            ret |= 4;
         
-        if (ld_set_current(LD_RED, get_curr_from_perc(LD_RED, Gb_cfg.ld_routine_perc[LD_RED][i])) < 0)
-            ret |= 4;
+  //      if (ld_set_current(LD_RED, get_curr_from_perc(LD_RED, Gb_cfg.ld_routine_perc[LD_RED][i])) < 0)
+    //        ret |= 8;
         
-        printf("now: %d-%d-%d %d:%d:%d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+        debug("Led Routine set intensity to: [%i] W%i B%i R%i.\n", i,
+                Gb_cfg.ld_routine_perc[LD_WHITE][i],
+                Gb_cfg.ld_routine_perc[LD_BLUE][i],
+                Gb_cfg.ld_routine_perc[LD_RED][i]);
+        syslog(LOG_INFO, "Led Routine set intensity to: [%i] W%i B%i R%i.", i,
+                ((ret && 2) ? -1 : Gb_cfg.ld_routine_perc[LD_WHITE][i]),
+                ((ret && 4) ? -1 : Gb_cfg.ld_routine_perc[LD_BLUE][i]),
+                ((ret && 8) ? -1 : Gb_cfg.ld_routine_perc[LD_RED][i]));
+        if(ret)
+            syslog(LOG_ERR, "Error setting routine led intensity: %i", ret);
+        
         latest_mins = mins_of_day;
     }
-    printf("mins: %d\n", mins_of_day);
-
-    if(ret) syslog(LOG_ERR, "Error setting routine led current: %d\n", ret);
+    
     return;
 }
 
@@ -173,7 +183,7 @@ int main()
     while (1)
     {
         //TODO: Insert daemon code here.
-        ld_daily_routine();
+        ld_daily_routine(0);
         sleep (20);
 //        break;
     }

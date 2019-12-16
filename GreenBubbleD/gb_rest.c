@@ -133,7 +133,7 @@ int callback_hello_world (const struct _u_request * request, struct _u_response 
 //sends a json
 int callback_gb_status (const struct _u_request * request, struct _u_response * response, void * user_data) {
 
-    json_t * j_body = json_pack("{sfsfsfsfs{sfsf}s{sfsf}s{sfsf}}",
+    json_t * j_body = json_pack("{sisisisis{sisi}s{sisi}s{sisi}}",
             "temp_air", Gb_sts.temp_air,
             "temp_water", Gb_sts.temp_water,
             "humidity_air", Gb_sts.humidity_air,
@@ -196,6 +196,33 @@ int callback_ld_enable (const struct _u_request * request, struct _u_response * 
     ulfius_set_string_body_response(response, 200, "Success Operation");
     return U_CALLBACK_CONTINUE;
 }
+
+void light_generate_points()
+{
+    unsigned char color, s, n;
+    int point;
+    float ystep, curve;
+
+    for (color = 0; color < LD_NUMB; color++) {
+        point = -1;
+        debug("\n\n");
+        for (s = 1; s < ROUT_STEP; s++) {
+            point++;
+            ystep = ((float)Gb_cfg.ld_spec[color][s] - (float)Gb_cfg.ld_spec[color][s-1])/ROUT_N;
+            curve = Gb_cfg.ld_spec[color][s-1];
+            Gb_cfg.ld_routine_perc[color][point] = curve;
+            debug("[%i] %d, ", point, Gb_cfg.ld_routine_perc[color][point]);
+            for (n = 1; n < ROUT_N; n++) {
+                point++;
+                curve += ystep;
+                Gb_cfg.ld_routine_perc[color][point] = curve;  
+                debug("[%i] %d, ", point, Gb_cfg.ld_routine_perc[color][point]);
+            }
+        }
+    }
+    Gb_cfg.ld_routine_init = true;  
+}
+
 //BETTER THE BELOW WAY
 /**
  * Callback function that receives a post in json format
@@ -206,12 +233,13 @@ int callback_ld_enable (const struct _u_request * request, struct _u_response * 
  *      "white_intensity": 62,
  *      "blue_intensity": 10,
  *      "red_intensity": 88
+ *      "light_spec": [[0, 100, 100, 75, 100, 100, 75, 0, 0], [0, 0, 0, 80, 40, 10, 0, 3, 0],…]
  *}
  */
 int callback_post_light (const struct _u_request * request, struct _u_response * response, void * user_data) {
     
     bool save, instant_mode, enable, en;
-    int ret=0;
+    int ret=0, count=0;
     unsigned int intens, curr;
     char * response_body;
     json_t * json_body_req = ulfius_get_json_body_request(request, NULL);
@@ -220,60 +248,84 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
     instant_mode = json_boolean_value(json_object_get(json_body_req,"instant_mode"));
     en = json_boolean_value(json_object_get(json_body_req,"enable"));
     
-    /* Set intensity and state */
-    //White
-    intens = json_integer_value(json_object_get(json_body_req,"white_intensity"));
-    curr = get_curr_from_perc(LD_WHITE, intens);
-    printf("current %d\n", curr);
-    enable = (en & intens);
-    if ((ld_set_current(LD_WHITE, curr) < 0) || (ld_set_output(LD_WHITE, enable) < 0))
-        ret |= 1;
-    else {
-       Gb_cfg.ld_instant[LD_WHITE].cset = curr;
-       Gb_cfg.ld_instant[LD_WHITE].enable = enable;
-    }
+    /* Check the Mode of Operation */
+    if (instant_mode) {
+        //Instant Mode
 
-    //Blue
-    intens = json_integer_value(json_object_get(json_body_req,"blue_intensity"));
-    curr = get_curr_from_perc(LD_BLUE, intens);
-    enable = (en & intens);
-    if ((ld_set_current(LD_BLUE, curr) < 0) || (ld_set_output(LD_BLUE, enable) < 0))
-        ret |= 2;
-    else {
-       Gb_cfg.ld_instant[LD_BLUE].cset = curr;
-       Gb_cfg.ld_instant[LD_BLUE].enable = enable;
-    }
+        //White
+        intens = json_integer_value(json_object_get(json_body_req,"white_intensity"));
+        curr = get_curr_from_perc(LD_WHITE, intens);
+        enable = (en & intens);
+        if ((ld_set_current(LD_WHITE, curr) < 0) || (ld_set_output(LD_WHITE, enable) < 0))
+            ret |= 1;
+        else {
+            Gb_cfg.ld_instant[LD_WHITE].cset = curr;
+            Gb_cfg.ld_instant[LD_WHITE].enable = enable;
+        }
 
-    //RED
-    intens = json_integer_value(json_object_get(json_body_req,"red_intensity"));
-    curr = get_curr_from_perc(LD_RED, intens);
-    enable = (en & intens);
-    if ((ld_set_current(LD_RED, curr) < 0) || (ld_set_output(LD_RED, enable) < 0))
-        ret |= 4;
-    else {
-       Gb_cfg.ld_instant[LD_RED].cset = curr;
-       //TODO afffffff, it is not good that cset is float, and the set function is mA. now it is wrong
-       Gb_cfg.ld_instant[LD_RED].enable = enable;
+        //Blue
+        intens = json_integer_value(json_object_get(json_body_req,"blue_intensity"));
+        curr = get_curr_from_perc(LD_BLUE, intens);
+        enable = (en & intens);
+        if ((ld_set_current(LD_BLUE, curr) < 0) || (ld_set_output(LD_BLUE, enable) < 0))
+            ret |= 2;
+        else {
+            Gb_cfg.ld_instant[LD_BLUE].cset = curr;
+            Gb_cfg.ld_instant[LD_BLUE].enable = enable;
+        }
+
+        //RED
+        intens = json_integer_value(json_object_get(json_body_req,"red_intensity"));
+        curr = get_curr_from_perc(LD_RED, intens);
+        enable = (en & intens);
+        if ((ld_set_current(LD_RED, curr) < 0) || (ld_set_output(LD_RED, enable) < 0))
+            ret |= 4;
+        else {
+            Gb_cfg.ld_instant[LD_RED].cset = curr;
+            Gb_cfg.ld_instant[LD_RED].enable = enable;
+        }
+
+    } else {
+        //Spectrum Mode
+        int a, e;
+        unsigned char *p = &(Gb_cfg.ld_spec[0][0]);
+        json_t * j_element, * j_array;
+        json_t * j_obj = json_object_get(json_body_req,"light_spec");
+
+        //Iterate over Json points
+        json_array_foreach(j_obj, a, j_array) {
+            json_array_foreach(j_array, e, j_element) {
+                count++;
+                if(count <= LD_NUMB*ROUT_STEP) {
+                    *p = (unsigned char) json_integer_value(j_element);
+                    p++;
+                } else
+                    ret |= 8;
+            }
+        }
+        //Generate intemediate points
+        light_generate_points();
+        ld_daily_routine(1);
     }
 
     if (save) {
         //TODO
     }
-/*
+
     if (ret) {
-        response_body = msprintf("Error setting lights: %i\n", ret);
+        response_body = msprintf("Error setting lights: Code %i\n", ret);
         syslog(LOG_ERR, response_body);
-        ulfius_set_string_body_response(response, 404, response_body);
+        ulfius_set_string_body_response(response, 500, response_body);
         o_free(response_body);
         json_decref(json_body_req);
-        return U_CALLBACK_ERROR;
+        return U_CALLBACK_CONTINUE;
     }
-*/
+
     response_body = msprintf("Light Cfg - Save: %d, Inst mode: %d, Enable: %d, W: %d, B: %d, R: %d\n",
             save, instant_mode, en, Gb_cfg.ld_instant[LD_WHITE].cset, Gb_cfg.ld_instant[LD_BLUE].cset
             ,Gb_cfg.ld_instant[LD_RED].cset);
     syslog(LOG_INFO, response_body);
-    printf(response_body);
+    debug(response_body);
   
     ulfius_set_string_body_response(response, 200, response_body);
     o_free(response_body);
