@@ -45,6 +45,7 @@
 int callback_hello_world (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_ld_enable (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_status (const struct _u_request * request, struct _u_response * response, void * user_data);
+int callback_gb_system (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_post_light (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_post_cfg (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data);
@@ -96,6 +97,7 @@ int rest_ulfius_init (struct _u_instance *instance) {
     // Endpoint list declaration
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/set/led/@color/enable/@on", 0, &callback_ld_enable, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/status", 0, &callback_gb_status, NULL);
+    ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/system", 0, &callback_gb_system, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", "/helloworld", NULL, 0, &callback_hello_world, NULL);
     ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/cfg/light", 0, &callback_post_light, NULL);
     ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/config", 0, &callback_post_cfg, NULL);
@@ -170,6 +172,48 @@ int callback_gb_status (const struct _u_request * request, struct _u_response * 
   return U_CALLBACK_CONTINUE;
 }
 
+//sends a json
+int callback_gb_system (const struct _u_request * request, struct _u_response * response, void * user_data) {
+
+    json_t * j_body = json_pack("{s{sssssssbsbsisisisi}s{sssssssbsbsisisisi}s{sssssssbsbsisisisi}}",
+            "ld_white",
+                "model", Gb_ld_sys[LD_WHITE].model,
+                "version", Gb_ld_sys[LD_WHITE].version,
+                "name", Gb_ld_sys[LD_WHITE].name,
+                "default_on", Gb_ld_sys[LD_WHITE].default_on,
+                "autocommit", Gb_ld_sys[LD_WHITE].autocommit,
+                "fwd_led_curr", Gb_ld_sys[LD_WHITE].fwd_led_curr,
+                "fwd_led_volt", Gb_ld_sys[LD_WHITE].fwd_led_volt,
+                "numb_leds", Gb_ld_sys[LD_WHITE].numb_leds,
+                "wave_length", Gb_ld_sys[LD_WHITE].wave_length,
+            "ld_blue",
+                "model", Gb_ld_sys[LD_BLUE].model,
+                "version", Gb_ld_sys[LD_BLUE].version,
+                "name", Gb_ld_sys[LD_BLUE].name,
+                "default_on", Gb_ld_sys[LD_BLUE].default_on,
+                "autocommit", Gb_ld_sys[LD_BLUE].autocommit,
+                "fwd_led_curr", Gb_ld_sys[LD_BLUE].fwd_led_curr,
+                "fwd_led_volt", Gb_ld_sys[LD_BLUE].fwd_led_volt,
+                "numb_leds", Gb_ld_sys[LD_BLUE].numb_leds,
+                "wave_length", Gb_ld_sys[LD_BLUE].wave_length,
+            "ld_red",
+                "model", Gb_ld_sys[LD_RED].model,
+                "version", Gb_ld_sys[LD_RED].version,
+                "name", Gb_ld_sys[LD_RED].name,
+                "default_on", Gb_ld_sys[LD_RED].default_on,
+                "autocommit", Gb_ld_sys[LD_RED].autocommit,
+                "fwd_led_curr", Gb_ld_sys[LD_RED].fwd_led_curr,
+                "fwd_led_volt", Gb_ld_sys[LD_RED].fwd_led_volt,
+                "numb_leds", Gb_ld_sys[LD_RED].numb_leds,
+                "wave_length", Gb_ld_sys[LD_RED].wave_length);
+
+    ulfius_set_json_body_response(response, 200, j_body);
+    json_decref(j_body);
+
+  return U_CALLBACK_CONTINUE;
+}
+
+
 /* URL/led/@color/enable/@on Ex: led/white/enable/1 */
 int callback_ld_enable (const struct _u_request * request, struct _u_response * response, void * user_data) {
 
@@ -197,6 +241,8 @@ int callback_ld_enable (const struct _u_request * request, struct _u_response * 
     return U_CALLBACK_CONTINUE;
 }
 
+//BETTER THE BELOW WAY
+
 void light_generate_points()
 {
     unsigned char color, s, n;
@@ -223,7 +269,6 @@ void light_generate_points()
     Gb_cfg.ld_routine_init = true;  
 }
 
-//BETTER THE BELOW WAY
 /**
  * Callback function that receives a post in json format
  *{

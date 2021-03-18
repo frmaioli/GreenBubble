@@ -146,10 +146,25 @@ void ld_daily_routine(bool update_now)
 
 static void ld_sys_init(void)
 {
-    Gb_ld_sys[LD_WHITE].max_curr = 700; //mA
-    Gb_ld_sys[LD_BLUE].max_curr = 300; //mA
-    Gb_ld_sys[LD_RED].max_curr = 600; //mA
-    //TODO: Get sys for each and correct the above values
+    // White: OSRAM GW CSSRM2.CM-M5M7-XX51-1
+    Gb_ld_sys[LD_WHITE].fwd_led_curr = 700; //mA
+    Gb_ld_sys[LD_WHITE].fwd_led_volt = 2800; //mV
+    Gb_ld_sys[LD_WHITE].numb_leds = 36;
+    Gb_ld_sys[LD_WHITE].wave_length = 6500; //kelvin
+    
+    // BLue: OSRAM GD CS8PM1.14-UOVJ-W4-1
+    Gb_ld_sys[LD_BLUE].fwd_led_curr = 350; //mA
+    Gb_ld_sys[LD_BLUE].fwd_led_volt = 2850; //mV
+    Gb_ld_sys[LD_BLUE].numb_leds = 6;
+    Gb_ld_sys[LD_BLUE].wave_length = 451; //nm
+
+    // Red: OSRAM GH CS8PM1.24-4T2U-1
+    Gb_ld_sys[LD_RED].fwd_led_curr = 350; //mA
+    Gb_ld_sys[LD_RED].fwd_led_volt = 2150; //mV
+    Gb_ld_sys[LD_RED].numb_leds = 6;
+    Gb_ld_sys[LD_RED].wave_length = 660; //nm
+
+    //TODO: Get sys for each. Values above are correct already.
 }
 
 int main()

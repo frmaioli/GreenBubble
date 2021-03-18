@@ -76,7 +76,10 @@ typedef struct {
     char name[17];
     bool default_on;
     bool autocommit;
-    unsigned int max_curr; //mA
+    unsigned int fwd_led_curr; //mA - max of led, not board
+    unsigned int fwd_led_volt; //mV - avg of led, not board
+    unsigned int numb_leds;
+    unsigned int wave_length; //nm or kelvin if white
 } ldSys_t;
 
 typedef struct {

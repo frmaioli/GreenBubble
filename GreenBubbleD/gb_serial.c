@@ -224,9 +224,9 @@ unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc)
 
     if (color >= LD_NUMB) return 0;
     
-    curr = (Gb_ld_sys[color].max_curr * perc)/100;
-    if (curr > Gb_ld_sys[color].max_curr)
-       return Gb_ld_sys[color].max_curr;
+    curr = (Gb_ld_sys[color].fwd_led_curr * perc)/100;
+    if (curr > Gb_ld_sys[color].fwd_led_curr)
+       return Gb_ld_sys[color].fwd_led_curr;
     else
        return curr; 
 }
