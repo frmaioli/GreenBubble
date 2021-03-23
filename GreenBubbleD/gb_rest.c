@@ -33,6 +33,7 @@
 
 #include <gb_rest.h>
 #include <gb_serial.h>
+#include <gb_led.h>
 
 #define PORT 8537
 #define PREFIX "/GBBL"
@@ -243,32 +244,6 @@ int callback_ld_enable (const struct _u_request * request, struct _u_response * 
 
 //BETTER THE BELOW WAY
 
-void light_generate_points()
-{
-    unsigned char color, s, n;
-    int point;
-    float ystep, curve;
-
-    for (color = 0; color < LD_NUMB; color++) {
-        point = -1;
-        debug("\n\n");
-        for (s = 1; s < ROUT_STEP; s++) {
-            point++;
-            ystep = ((float)Gb_cfg.ld_spec[color][s] - (float)Gb_cfg.ld_spec[color][s-1])/ROUT_N;
-            curve = Gb_cfg.ld_spec[color][s-1];
-            Gb_cfg.ld_routine_perc[color][point] = curve;
-            debug("[%i] %d, ", point, Gb_cfg.ld_routine_perc[color][point]);
-            for (n = 1; n < ROUT_N; n++) {
-                point++;
-                curve += ystep;
-                Gb_cfg.ld_routine_perc[color][point] = curve;  
-                debug("[%i] %d, ", point, Gb_cfg.ld_routine_perc[color][point]);
-            }
-        }
-    }
-    Gb_cfg.ld_routine_init = true;  
-}
-
 /**
  * Callback function that receives a post in json format
  *{
@@ -349,9 +324,11 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
             }
         }
         //Generate intemediate points
-        light_generate_points();
+        ld_generate_points();
         ld_daily_routine(1);
     }
+
+    Gb_cfg.ld_instant_mode = instant_mode;
 
     if (save) {
         //TODO

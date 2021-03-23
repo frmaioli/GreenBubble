@@ -19,6 +19,8 @@
  ***********************************************************************
  */
 
+//TODO: In last version of BST900 and B6303 config and status changed from mV/mA to V/A in the serial. So, 123mv now is 1.23V. The code below must be adapted to convert.
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -46,6 +48,8 @@ static void ld_select_driver(ldBoard_t color)
             digitalWrite(GPIO_18, LOW);
             break;
     }
+    serialFlush(Fd);
+    return;
 }
 
 static int ld_read_feedback()
@@ -120,6 +124,7 @@ int ld_get_system(ldBoard_t color, ldSys_t *sys)
 int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
 {
     char sts1[5];
+    float fv, fc;
 
     if ((Fd < 0) || (color >= LD_NUMB)) return -1;
     
@@ -132,9 +137,12 @@ int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
         return -1;
 
     // Parse the result
-    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVSET: %u\r\nCSET: %u\r\n", sts1, &cfg->vset, &cfg->cset) == EOF)
+    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVSET: %f\r\nCSET: %f\r\n", sts1, &fv, &fc) == EOF)
         return -1;
     
+    cfg->vset = (unsigned int)(fv*1000); //convert to mV
+    cfg->cset = (unsigned int)(fc*1000); //convert to mA
+
     if (ld_onoff2bool(sts1, &cfg->enable)) return -1;
 
     return 0;
@@ -234,6 +242,7 @@ unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc)
 int ld_serial_init()
 {
 	Fd = serialOpen("/dev/ttyAMA0", 38400);
+    debug("Fd %i\n", Fd);
 	if (Fd < 0)
 		fprintf (stderr, "Unable to open serial device: %s\n", strerror(errno));
 		

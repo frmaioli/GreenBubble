@@ -21,11 +21,11 @@ PROJECT		= GreenBubbleD
 LIBRARY		= nope
 INCPATHS	= ./ /usr/local/include
 LIBPATHS	= ./lib /usr/lib /usr/local/lib
-#DEBUG		= -g -O1
+DEBUG		= -g -O1
 CFLAGS		= -c -Wall -Winline -pipe -std=c99 $(DEBUG)
 CC=gcc
 
-SOURCES		= gb_main.c gb_serial.c gb_rest.c
+SOURCES		= gb_main.c gb_serial.c gb_rest.c gb_led.c gb_config.c
 LDFLAGS		= -lwiringPi -lulfius -ljansson -lorcania -lpthread -lm -lcrypt -lrt
 
 

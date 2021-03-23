@@ -19,7 +19,6 @@
  ***********************************************************************
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -27,13 +26,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <syslog.h>
-#include <time.h>
 
 #include <wiringPi.h>
 
 #include <gb_main.h>
+#include <gb_config.h>
 #include <gb_serial.h>
 #include <gb_rest.h>
+#include <gb_led.h>
 
 //Global GreenBubble entities
 ldSys_t Gb_ld_sys[LD_NUMB];
@@ -95,78 +95,6 @@ static void daemon_init()
     openlog("GreenBubbleD", LOG_PID, LOG_DAEMON);
 }
 
-void ld_daily_routine(bool update_now)
-{
-    time_t t = time(NULL);
-    struct tm tmt = *localtime(&t);
-    int mins_of_day = tmt.tm_hour*60 + tmt.tm_min;
-    int ret = 0;
-    unsigned char i = 0;
-    static int latest_mins = -1;
-
-    //Check if Cfg was received
-    if (Gb_cfg.ld_routine_init == false)
-        return;
-
-    //Update lights each TIME_LD min
-    if(((latest_mins != mins_of_day) & (mins_of_day%TIME_LD == 0)) || update_now) {
-  
-        //Get the value to be applied for this time and limit to 100% for protection
-        i = mins_of_day/TIME_LD;
-        if (i > ROUT_TOT) {
-           ret |= 1;
-           i = ROUT_TOT;
-        }
-
-  //      if (ld_set_current(LD_WHITE, get_curr_from_perc(LD_WHITE, Gb_cfg.ld_routine_perc[LD_WHITE][i])) < 0)
-    //        ret |= 2;
-        
-      //  if (ld_set_current(LD_BLUE, get_curr_from_perc(LD_BLUE, Gb_cfg.ld_routine_perc[LD_BLUE][i])) < 0)
-//            ret |= 4;
-        
-  //      if (ld_set_current(LD_RED, get_curr_from_perc(LD_RED, Gb_cfg.ld_routine_perc[LD_RED][i])) < 0)
-    //        ret |= 8;
-        
-        debug("Led Routine set intensity to: [%i] W%i B%i R%i.\n", i,
-                Gb_cfg.ld_routine_perc[LD_WHITE][i],
-                Gb_cfg.ld_routine_perc[LD_BLUE][i],
-                Gb_cfg.ld_routine_perc[LD_RED][i]);
-        syslog(LOG_INFO, "Led Routine set intensity to: [%i] W%i B%i R%i.", i,
-                ((ret && 2) ? -1 : Gb_cfg.ld_routine_perc[LD_WHITE][i]),
-                ((ret && 4) ? -1 : Gb_cfg.ld_routine_perc[LD_BLUE][i]),
-                ((ret && 8) ? -1 : Gb_cfg.ld_routine_perc[LD_RED][i]));
-        if(ret)
-            syslog(LOG_ERR, "Error setting routine led intensity: %i", ret);
-        
-        latest_mins = mins_of_day;
-    }
-    
-    return;
-}
-
-static void ld_sys_init(void)
-{
-    // White: OSRAM GW CSSRM2.CM-M5M7-XX51-1
-    Gb_ld_sys[LD_WHITE].fwd_led_curr = 700; //mA
-    Gb_ld_sys[LD_WHITE].fwd_led_volt = 2800; //mV
-    Gb_ld_sys[LD_WHITE].numb_leds = 36;
-    Gb_ld_sys[LD_WHITE].wave_length = 6500; //kelvin
-    
-    // BLue: OSRAM GD CS8PM1.14-UOVJ-W4-1
-    Gb_ld_sys[LD_BLUE].fwd_led_curr = 350; //mA
-    Gb_ld_sys[LD_BLUE].fwd_led_volt = 2850; //mV
-    Gb_ld_sys[LD_BLUE].numb_leds = 6;
-    Gb_ld_sys[LD_BLUE].wave_length = 451; //nm
-
-    // Red: OSRAM GH CS8PM1.24-4T2U-1
-    Gb_ld_sys[LD_RED].fwd_led_curr = 350; //mA
-    Gb_ld_sys[LD_RED].fwd_led_volt = 2150; //mV
-    Gb_ld_sys[LD_RED].numb_leds = 6;
-    Gb_ld_sys[LD_RED].wave_length = 660; //nm
-
-    //TODO: Get sys for each. Values above are correct already.
-}
-
 int main()
 {
     struct _u_instance ulfius_instance;
@@ -179,6 +107,9 @@ int main()
     // Initialiye the Daemon
     daemon_init();
 
+    // Set default Config
+    dflt_config_init(&Gb_cfg);
+
     // Initialiye the WiringPi library
     wiringPiSetupGpio();
 
@@ -189,16 +120,22 @@ int main()
     // Initialiye the web server for the REST endpoints
     if (rest_ulfius_init(&ulfius_instance) < 0)
         syslog(LOG_CRIT, "Unable to start ulfius web service.");
+
+    //Get LED System information
+    if (ld_sys_init() < 0)
+        syslog(LOG_CRIT, "Unable to get Led Device Stystem's information.");
     
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
-
-    //Get LD System information
-    ld_sys_init();
 
     while (1)
     {
         //TODO: Insert daemon code here.
         ld_daily_routine(0);
+
+	//just testing smtg....
+        ld_get_config(LD_WHITE, &Gb_cfg.ld_instant[LD_WHITE]);
+    	debug("config vset: %u cset: %u\n", Gb_cfg.ld_instant[LD_WHITE].vset, Gb_cfg.ld_instant[LD_WHITE].cset);
+
         sleep (20);
 //        break;
     }
