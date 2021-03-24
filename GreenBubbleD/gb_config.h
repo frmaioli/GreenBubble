@@ -24,6 +24,7 @@
 
 #include <gb_main.h>
 
-void dflt_config_init(gbCfg_t *cfg);
+void cfg_load(gbCfg_t *cfg);
+void cfg_save(gbCfg_t *cfg);
 
 #endif //GB_CONFIG_H

@@ -19,8 +19,6 @@
  ***********************************************************************
  */
 
-//TODO: In last version of BST900 and B6303 config and status changed from mV/mA to V/A in the serial. So, 123mv now is 1.23V. The code below must be adapted to convert.
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -28,9 +26,13 @@
 #include <wiringSerial.h>
 
 #include "gb_serial.h"
+#include "gb_main.h"
+
+#define CHECK(x) if ((Fd < 0) || (x >= LD_NUMB) || (Gb_ld_sys[x].device_ok == false)) return -1
 
 int Fd = -1;
 char Rd_buffer[512];
+char Driver[17];
 
 static void ld_select_driver(ldBoard_t color)
 {
@@ -38,14 +40,17 @@ static void ld_select_driver(ldBoard_t color)
         case LD_WHITE:
             digitalWrite(GPIO_17, LOW);
             digitalWrite(GPIO_18, LOW);
+            strcpy(Driver, "LED_WHITE");
             break;
         case LD_BLUE:
             digitalWrite(GPIO_17, LOW);
             digitalWrite(GPIO_18, HIGH);
+            strcpy(Driver, "LED_BLUE");
             break;
         case LD_RED:
             digitalWrite(GPIO_17, HIGH);
             digitalWrite(GPIO_18, LOW);
+            strcpy(Driver, "LED_RED");
             break;
     }
     serialFlush(Fd);
@@ -76,7 +81,7 @@ static int ld_read_feedback()
     serialFlush(Fd);
 
     if (errno) {
-        fprintf (stderr, "Unable to complete serial reading: %s\n", strerror(errno));
+        fprintf (stderr, "%s: Unable to complete serial reading: %s\n", Driver, strerror(errno));
         return -1;
     }
 
@@ -91,6 +96,7 @@ static int ld_onoff2bool(char *str_sts, bool *bool_sts)
         *bool_sts = FALSE;
     else {
         errno = EINVAL;
+        fprintf (stderr, "%s: Error reading ON/OFF parameter: %s\n", Driver, str_sts);
         return -1;
     }
 
@@ -101,7 +107,7 @@ int ld_get_system(ldBoard_t color, ldSys_t *sys)
 {
     char sts1[5], sts2[5];
 
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    if ((Fd < 0) || (color >= LD_NUMB)) return -1; //Do not use check macro here
 
     // Select the Board and send the command
     ld_select_driver(color);
@@ -126,7 +132,7 @@ int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
     char sts1[5];
     float fv, fc;
 
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    CHECK(color);
     
     // Select the Board and send the command
     ld_select_driver(color);
@@ -152,7 +158,7 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
 {
     char sts1[5], sts2[10];
 
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    CHECK(color);
     
     // Select the Board and send the command
     ld_select_driver(color);
@@ -183,7 +189,7 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
 
 int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 {
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    CHECK(color);
     
     // Select the Board and send the command
     ld_select_driver(color);
@@ -198,7 +204,7 @@ int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 
 int ld_set_current(ldBoard_t color, unsigned int current)
 {
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    CHECK(color);
     
     // Select the Board and send the command
     ld_select_driver(color);
@@ -213,7 +219,7 @@ int ld_set_current(ldBoard_t color, unsigned int current)
 
 int ld_set_output(ldBoard_t color, bool output)
 {
-    if ((Fd < 0) || (color >= LD_NUMB)) return -1;
+    CHECK(color);
     
     // Select the Board and send the command
     ld_select_driver(color);

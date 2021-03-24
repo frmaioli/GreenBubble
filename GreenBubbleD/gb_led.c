@@ -31,6 +31,8 @@
 
 int ld_sys_init(void)
 {
+    int ret = 0;
+
     // White: OSRAM GW CSSRM2.CM-M5M7-XX51-1
     Gb_ld_sys[LD_WHITE].fwd_led_curr = 700; //mA
     Gb_ld_sys[LD_WHITE].fwd_led_volt = 2800; //mV
@@ -49,29 +51,46 @@ int ld_sys_init(void)
     Gb_ld_sys[LD_RED].numb_leds = 6;
     Gb_ld_sys[LD_RED].wave_length = 660; //nm
 
-    // Get System Information
-    if (ld_get_system(LD_WHITE, &Gb_ld_sys[LD_WHITE])) return -1;
-    if (ld_get_system(LD_BLUE, &Gb_ld_sys[LD_BLUE])) return -1;
-    if (ld_get_system(LD_RED, &Gb_ld_sys[LD_RED])) return -1;
-
-    // Confirm we have a correct color-device match
-    if ((strncmp(Gb_ld_sys[LD_WHITE].model, "BST900", 6) != 0) ||
-            (strncmp(Gb_ld_sys[LD_WHITE].name, "LED_WHITE", 9) != 0)) {
+    // WHITE: Get System and Confirm we have a correct color-device match
+    if (ld_get_system(LD_WHITE, &Gb_ld_sys[LD_WHITE]) != 0) {
+        Gb_ld_sys[LD_WHITE].device_ok = false;
+        ret = -1;
+    } else if ((strncmp(Gb_ld_sys[LD_WHITE].model, "BST900", 6) != 0) ||
+                (strncmp(Gb_ld_sys[LD_WHITE].name, "LED_WHITE", 9) != 0)) {
         syslog(LOG_CRIT, "White Led Device's model or name does not match with the expected.");
-        return -2;
-    }
-    if ((strncmp(Gb_ld_sys[LD_BLUE].model, "B6303", 5) != 0) ||
-            (strncmp(Gb_ld_sys[LD_BLUE].name, "LED_BLUE", 8) != 0)) {
-        syslog(LOG_CRIT, "Blue Led Device's model or name does not match with the expected.");
-        return -2;
-    }
-    if ((strncmp(Gb_ld_sys[LD_RED].model, "B6303", 5) != 0) ||
-            (strncmp(Gb_ld_sys[LD_RED].name, "LED_RED", 7) != 0)) {
-        syslog(LOG_CRIT, "Red Led Device's model or name does not match with the expected.");
-        return -2;
+        Gb_ld_sys[LD_WHITE].device_ok = false;
+        ret = -2;
+    } else {
+        Gb_ld_sys[LD_WHITE].device_ok = true;
     }
 
-    return 0;
+    // BLUE: Get System and Confirm we have a correct color-device match
+    if (ld_get_system(LD_BLUE, &Gb_ld_sys[LD_BLUE]) != 0) {
+        Gb_ld_sys[LD_BLUE].device_ok = false;
+        ret = -1;
+    } else if ((strncmp(Gb_ld_sys[LD_BLUE].model, "B6303", 5) != 0) ||
+                (strncmp(Gb_ld_sys[LD_BLUE].name, "LED_BLUE", 8) != 0)) {
+        syslog(LOG_CRIT, "Blue Led Device's model or name does not match with the expected.");
+        Gb_ld_sys[LD_BLUE].device_ok = false;
+        ret = -2;
+    } else {
+        Gb_ld_sys[LD_BLUE].device_ok = true;
+    }
+
+    // RED: Get System and Confirm we have a correct color-device match
+    if (ld_get_system(LD_RED, &Gb_ld_sys[LD_RED]) != 0) {
+        Gb_ld_sys[LD_RED].device_ok = false;
+        ret = -1;
+    } else if ((strncmp(Gb_ld_sys[LD_RED].model, "B6303", 5) != 0) ||
+                (strncmp(Gb_ld_sys[LD_RED].name, "LED_RED", 7) != 0)) {
+        syslog(LOG_CRIT, "Red Led Device's model or name does not match with the expected.");
+        Gb_ld_sys[LD_RED].device_ok = false;
+        ret = -2;
+    } else {
+        Gb_ld_sys[LD_RED].device_ok = true;
+    }
+
+    return ret;
 }
 
 /***************** FUNCT *******************/

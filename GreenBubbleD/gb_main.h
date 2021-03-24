@@ -76,6 +76,7 @@ typedef enum {
 /***************** SYSTEM *******************/
 
 typedef struct {
+    bool device_ok;
     char model[10];
     char version[10];
     char name[17];

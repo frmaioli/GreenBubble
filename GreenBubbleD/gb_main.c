@@ -107,8 +107,9 @@ int main()
     // Initialiye the Daemon
     daemon_init();
 
-    // Set default Config
-    dflt_config_init(&Gb_cfg);
+    // Create default Config
+    cfg_load(&Gb_cfg);
+    cfg_save(&Gb_cfg);  //test
 
     // Initialiye the WiringPi library
     wiringPiSetupGpio();
@@ -124,6 +125,12 @@ int main()
     //Get LED System information
     if (ld_sys_init() < 0)
         syslog(LOG_CRIT, "Unable to get Led Device Stystem's information.");
+
+    //Apply default cfg to the Leds (ex. set voltage, as after we control only current
+//    else {
+//        if (ld_apply_dflt_cfg(&Gb_cfg) < 0)
+//            syslog(LOG_ERR, "Unable to apply Led Device default config.");
+//    }
     
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
 
