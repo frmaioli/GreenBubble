@@ -171,6 +171,8 @@ void ld_generate_points(void)
             }
         }
     }
+    debug("\n\n");
+    
     Gb_cfg.ld_routine_init = true;
     return;
 }

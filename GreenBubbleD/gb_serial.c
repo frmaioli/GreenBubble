@@ -248,7 +248,6 @@ unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc)
 int ld_serial_init()
 {
 	Fd = serialOpen("/dev/ttyAMA0", 38400);
-    debug("Fd %i\n", Fd);
 	if (Fd < 0)
 		fprintf (stderr, "Unable to open serial device: %s\n", strerror(errno));
 		

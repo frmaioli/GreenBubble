@@ -34,6 +34,7 @@
 #include <gb_rest.h>
 #include <gb_serial.h>
 #include <gb_led.h>
+#include <gb_config.h>
 
 #define PORT 8537
 #define PREFIX "/GBBL"
@@ -331,7 +332,7 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
     Gb_cfg.ld_instant_mode = instant_mode;
 
     if (save) {
-        //TODO
+        cfg_save(&Gb_cfg);
     }
 
     if (ret) {

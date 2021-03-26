@@ -126,12 +126,6 @@ int main()
     if (ld_sys_init() < 0)
         syslog(LOG_CRIT, "Unable to get Led Device Stystem's information.");
 
-    //Apply default cfg to the Leds (ex. set voltage, as after we control only current
-//    else {
-//        if (ld_apply_dflt_cfg(&Gb_cfg) < 0)
-//            syslog(LOG_ERR, "Unable to apply Led Device default config.");
-//    }
-    
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
 
     while (1)
