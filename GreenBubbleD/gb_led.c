@@ -101,7 +101,7 @@ void ld_daily_routine(bool update_now)
     struct tm tmt = *localtime(&t);
     int mins_of_day = tmt.tm_hour*60 + tmt.tm_min;
     int ret = 0;
-    unsigned char i = 0;
+    unsigned char i = 0, ld;
     static int latest_mins = -1;
 
     //Only run the routine if we are in this mode
@@ -122,20 +122,22 @@ void ld_daily_routine(bool update_now)
            i = ROUT_TOT;
         }
 
-  //      if (ld_set_current(LD_WHITE, get_curr_from_perc(LD_WHITE, Gb_cfg.ld_routine_perc[LD_WHITE][i])) < 0)
-    //        ret |= 2;
+        FOR_EACH_LED(ld) {
+            if (Gb_cfg.init_volt_applied[ld]) {
+                if (ld_set_current(ld, get_curr_from_perc(ld, Gb_cfg.ld_routine_perc[ld][i])) < 0)
+                    ret |= (2 << ld);
+                else if (Gb_sts.ld_sts[ld].enable == false) //routine is not contrlled by instant
+                    if (ld_set_output(ld, true))
+                        ret |= (2 << ld);
+            } else
+                ret |= (2 << ld);
+        }
         
-      //  if (ld_set_current(LD_BLUE, get_curr_from_perc(LD_BLUE, Gb_cfg.ld_routine_perc[LD_BLUE][i])) < 0)
-//            ret |= 4;
-        
-  //      if (ld_set_current(LD_RED, get_curr_from_perc(LD_RED, Gb_cfg.ld_routine_perc[LD_RED][i])) < 0)
-    //        ret |= 8;
-        
-        debug("Led Routine set intensity to: [%i] W%i B%i R%i.\n", i,
+        debug("Led Routine set intensity to: [%i] W:%i B:%i R:%i.\n", i,
                 Gb_cfg.ld_routine_perc[LD_WHITE][i],
                 Gb_cfg.ld_routine_perc[LD_BLUE][i],
                 Gb_cfg.ld_routine_perc[LD_RED][i]);
-        syslog(LOG_INFO, "Led Routine set intensity to: [%i] W%i B%i R%i.", i,
+        syslog(LOG_INFO, "Led Routine set intensity to: [%i] W:%i B:%i R:%i.", i,
                 ((ret && 2) ? -1 : Gb_cfg.ld_routine_perc[LD_WHITE][i]),
                 ((ret && 4) ? -1 : Gb_cfg.ld_routine_perc[LD_BLUE][i]),
                 ((ret && 8) ? -1 : Gb_cfg.ld_routine_perc[LD_RED][i]));
@@ -154,7 +156,7 @@ void ld_generate_points(void)
     int point;
     float ystep, curve;
 
-    for (color = 0; color < LD_NUMB; color++) {
+    FOR_EACH_LED(color) {
         point = -1;
         debug("\n\n");
         for (s = 1; s < ROUT_STEP; s++) {

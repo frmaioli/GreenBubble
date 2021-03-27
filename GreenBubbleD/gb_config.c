@@ -26,6 +26,7 @@
 #include <gb_config.h>
 #include <gb_led.h>
 #include <gb_main.h>
+#include <gb_serial.h>
 
 static void cfg_load_dflt(gbCfg_t *cfg)
 {
@@ -60,8 +61,6 @@ static void cfg_load_dflt(gbCfg_t *cfg)
 
     return;
 }
-
-//TODO cfg_apply: This would apply the CFG
 
 static void cfg_print(gbCfg_t *cfg)
 {
@@ -197,5 +196,28 @@ void cfg_save(gbCfg_t *cfg)
     json_decref(array_w);
     json_decref(array_b);
     json_decref(array_r);
+    return;
+}
+
+void cfg_apply(gbCfg_t *cfg)
+{
+    int i, ret;
+    bool enable;
+
+    FOR_EACH_LED(i) {
+ 
+        ret = ld_set_voltage(i, cfg->ld_instant[i].vset);
+        cfg->init_volt_applied[i] = (ret == 0) ? true : false;
+
+        if (cfg->ld_instant_mode) {
+            enable = (cfg->ld_instant[i].enable & cfg->ld_instant[i].cset);
+            ret |= ld_set_current(i, cfg->ld_instant[i].cset);
+            if (!ret)
+                ret |= ld_set_output(i, enable);
+            if (ret)
+                syslog(LOG_ERR, "Error applying the config on Led %i.", i);
+        }
+    }
+
     return;
 }

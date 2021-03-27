@@ -106,11 +106,6 @@ int main()
     
     // Initialiye the Daemon
     daemon_init();
-
-    // Create default Config
-    cfg_load(&Gb_cfg);
-    cfg_save(&Gb_cfg);  //test
-
     // Initialiye the WiringPi library
     wiringPiSetupGpio();
 
@@ -124,14 +119,23 @@ int main()
 
     //Get LED System information
     if (ld_sys_init() < 0)
-        syslog(LOG_CRIT, "Unable to get Led Device Stystem's information.");
+        syslog(LOG_CRIT, "Unable to get Led Device System's information.");
+
+    // Load and Apply Config
+    cfg_load(&Gb_cfg);
+    cfg_apply(&Gb_cfg);
+    cfg_save(&Gb_cfg);  //test TODO: remove
 
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
 
+    //First call updates immediatly
+    ld_daily_routine(1);
+
     while (1)
     {
-        //TODO: Insert daemon code here.
         ld_daily_routine(0);
+
+        //TODO: status routine
 
 	//just testing smtg....
         ld_get_config(LD_WHITE, &Gb_cfg.ld_instant[LD_WHITE]);

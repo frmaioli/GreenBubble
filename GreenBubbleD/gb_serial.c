@@ -190,7 +190,8 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
 int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 {
     CHECK(color);
-    
+
+    //TODO: Check limits    
     // Select the Board and send the command
     ld_select_driver(color);
     serialPrintf(Fd, "VOLTAGE %u\n", voltage);
@@ -206,6 +207,7 @@ int ld_set_current(ldBoard_t color, unsigned int current)
 {
     CHECK(color);
     
+    //TODO: Check limits    
     // Select the Board and send the command
     ld_select_driver(color);
     serialPrintf(Fd, "CURRENT %u\n", current);
