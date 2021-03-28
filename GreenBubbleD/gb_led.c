@@ -51,6 +51,15 @@ int ld_sys_init(void)
     Gb_ld_sys[LD_RED].numb_leds = 6;
     Gb_ld_sys[LD_RED].wave_length = 660; //nm
 
+    //Max and Min led device voltage
+    Gb_ld_sys[LD_WHITE].max_volt = 120000; //mv
+    Gb_ld_sys[LD_WHITE].min_volt = 40000; //mv (vin 36 + 4 for insurrance)
+    Gb_ld_sys[LD_BLUE].max_volt = 32000; //mv (vin 36 - 4 for insurrance)
+    Gb_ld_sys[LD_BLUE].min_volt = 0; //mv
+    Gb_ld_sys[LD_RED].max_volt = 32000; //mv (vin 36 - 4 for insurrance)
+    Gb_ld_sys[LD_RED].min_volt = 0; //mv
+
+
     // WHITE: Get System and Confirm we have a correct color-device match
     if (ld_get_system(LD_WHITE, &Gb_ld_sys[LD_WHITE]) != 0) {
         Gb_ld_sys[LD_WHITE].device_ok = false;

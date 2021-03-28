@@ -87,6 +87,8 @@ typedef struct {
     unsigned int fwd_led_volt; //mV - avg of led, not board
     unsigned int numb_leds;
     unsigned int wave_length; //nm or kelvin if white
+    unsigned int max_volt; //the board
+    unsigned int min_volt; //the board
 } ldSys_t;
 
 

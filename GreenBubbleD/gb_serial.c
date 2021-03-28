@@ -157,6 +157,7 @@ int ld_get_config(ldBoard_t color, ldCfg_t *cfg)
 int ld_get_status(ldBoard_t color, ldSts_t *sts)
 {
     char sts1[5], sts2[10];
+    float fvi, fv, fc;
 
     CHECK(color);
     
@@ -169,10 +170,14 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
         return -1;
 
     // Parse the result
-    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVIN: %u %u\r\nVOUT: %u %u\r\nCOUT: %u %u\r\nCONSTANT: %s\r\n",
-            sts1, &sts->vin, &sts->vin_raw, &sts->vout, &sts->vout_raw, &sts->cout, &sts->cout_raw, sts2) == EOF)
+    if (sscanf(Rd_buffer, "OUTPUT: %s\r\nVIN: %f %u\r\nVOUT: %f %u\r\nCOUT: %f %u\r\nCONSTANT: %s\r\n",
+            sts1, &fvi, &sts->vin_raw, &fv, &sts->vout_raw, &fc, &sts->cout_raw, sts2) == EOF)
         return -1;
-    
+
+    sts->vin = (unsigned int)(fvi*1000); //convert to mV
+    sts->vout = (unsigned int)(fv*1000); //convert to mV
+    sts->cout = (unsigned int)(fc*1000); //convert to mA
+
     if (ld_onoff2bool(sts1, &sts->enable)) return -1;
 
     if (strncmp(sts2, "VOLTAGE", 7) == 0)
@@ -189,12 +194,21 @@ int ld_get_status(ldBoard_t color, ldSts_t *sts)
 
 int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 {
+    float fv;
+
     CHECK(color);
 
-    //TODO: Check limits    
+    if (voltage > Gb_ld_sys[color].max_volt)
+        voltage = Gb_ld_sys[color].max_volt;
+
+    if (voltage < Gb_ld_sys[color].min_volt)
+        voltage = Gb_ld_sys[color].min_volt;
+
+    fv = ((float)(voltage))/1000; //convert to 1.23 format
+
     // Select the Board and send the command
     ld_select_driver(color);
-    serialPrintf(Fd, "VOLTAGE %u\n", voltage);
+    serialPrintf(Fd, "VOLTAGE %.2f\n", fv);
 
     // Get the message
     if (ld_read_feedback())
@@ -205,12 +219,18 @@ int ld_set_voltage(ldBoard_t color, unsigned int voltage)
 
 int ld_set_current(ldBoard_t color, unsigned int current)
 {
+    float fc;
+
     CHECK(color);
-    
-    //TODO: Check limits    
+
+    if (current > Gb_ld_sys[color].fwd_led_curr)
+        current = Gb_ld_sys[color].fwd_led_curr;
+
+    fc = ((float)(current))/1000; //convert to 1.23 format
+
     // Select the Board and send the command
     ld_select_driver(color);
-    serialPrintf(Fd, "CURRENT %u\n", current);
+    serialPrintf(Fd, "CURRENT %.2f\n", fc);
 
     // Get the message
     if (ld_read_feedback())

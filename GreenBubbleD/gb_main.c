@@ -133,9 +133,13 @@ int main()
 
     while (1)
     {
+        int i;
+
         ld_daily_routine(0);
 
-        //TODO: status routine
+        //TODO: review the timing, dont need to take status too often
+        FOR_EACH_LED(i)        
+            ld_get_status(i, &Gb_sts.ld_sts[i]);
 
 	//just testing smtg....
         ld_get_config(LD_WHITE, &Gb_cfg.ld_instant[LD_WHITE]);
