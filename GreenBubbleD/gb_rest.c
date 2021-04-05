@@ -47,6 +47,7 @@
 int callback_hello_world (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_ld_enable (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_status (const struct _u_request * request, struct _u_response * response, void * user_data);
+int callback_gb_charts (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_system (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_post_light (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_post_cfg (const struct _u_request * request, struct _u_response * response, void * user_data);
@@ -99,10 +100,21 @@ int rest_ulfius_init (struct _u_instance *instance) {
     // Endpoint list declaration
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/set/led/@color/enable/@on", 0, &callback_ld_enable, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/status", 0, &callback_gb_status, NULL);
+    ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/charts", 0, &callback_gb_charts, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/system", 0, &callback_gb_system, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", "/helloworld", NULL, 0, &callback_hello_world, NULL);
     ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/cfg/light", 0, &callback_post_light, NULL);
     ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/config", 0, &callback_post_cfg, NULL);
+
+    // Set default headers
+    u_map_put(instance->default_headers, "Access-Control-Allow-Origin", "*"); //Avoid CORS issues, allowing everything. Can be better controlled later.
+    //u_map_put(config->instance->default_headers, "Access-Control-Allow-Credentials", "true");
+    //u_map_put(config->instance->default_headers, "Cache-Control", "no-store");
+    //u_map_put(config->instance->default_headers, "Pragma", "no-cache");
+    //u_map_put(response->map_header, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    //u_map_put(response->map_header, "Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Bearer, Authorization");
+    //u_map_put(response->map_header, "Access-Control-Max-Age", "1800");
+
 
     // default_endpoint declaration
     ulfius_set_default_endpoint(instance, &callback_default, NULL);
@@ -132,6 +144,32 @@ void rest_ulfius_stop (struct _u_instance *instance)
 int callback_hello_world (const struct _u_request * request, struct _u_response * response, void * user_data) {
   ulfius_set_string_body_response(response, 200, "Hello World!");
   return U_CALLBACK_CONTINUE;
+}
+
+//sends a json
+int callback_gb_charts (const struct _u_request * request, struct _u_response * response, void * user_data) {
+
+    json_t *j_body = json_pack("{s{sososo}sososososososo}",
+            "hist_ld_spec",
+                "white", Gb_sts.hist.intens[LD_WHITE],
+                "blue", Gb_sts.hist.intens[LD_BLUE],
+                "red", Gb_sts.hist.intens[LD_RED],
+            "hist_vin", Gb_sts.hist.vin,
+            "hist_humidity", Gb_sts.hist.humidity,
+            "hist_rain", Gb_sts.hist.rain,
+            "hist_fog", Gb_sts.hist.fog,
+            "hist_tempPS", Gb_sts.hist.tPS,
+            "hist_tempAir", Gb_sts.hist.tAir,
+            "hist_tempWater", Gb_sts.hist.tWater);
+
+    ulfius_set_json_body_response(response, 200, j_body);
+
+    /*Used to debug only */
+//    if (json_dump_file(j_body, "./jsonTime.json", JSON_INDENT(4)) != 0)
+//        syslog(LOG_ERR, "Unable to save config.");
+
+    //Do not decref! As it continues to be used.
+    return U_CALLBACK_CONTINUE;
 }
 
 //sends a json

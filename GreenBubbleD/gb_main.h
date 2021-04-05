@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <jansson.h>
 
 /***************** DEFINES & ENUMS *******************/
 
@@ -36,6 +37,8 @@
                                 __LINE__, __func__, ##__VA_ARGS__); } while (0)
 
 #define MAX_LIMIT(VALUE, LIMIT) (VALUE > LIMIT) ? LIMIT : VALUE
+
+#define MAIN_LOOP_SEC 30
 
 typedef enum {
     GPIO_02 = 2, // I2C SDA
@@ -92,29 +95,6 @@ typedef struct {
 } ldSys_t;
 
 
-/***************** STATUS *******************/
-
-typedef struct {
-    bool enable;
-    unsigned int vin_raw;
-    unsigned int vout_raw;
-    unsigned int cout_raw;
-    unsigned int vin;  // mV
-    unsigned int vout; // mV
-    unsigned int cout; // mA
-    bool constant_current; // If false, we are in constant voltage
-} ldSts_t;
-
-typedef struct {
-    int temp_air; //mCelsius
-    int temp_water; //mCelsius
-    unsigned char humidity_air; //%
-    ldSts_t ld_sts[LD_NUMB];
-} gbSts_t;
-
-extern gbSts_t Gb_sts;
-
-
 /***************** CONFIG *******************/
 
 #define TIME_LD    10 //in Minuts
@@ -138,6 +118,44 @@ typedef struct {
     bool ld_routine_init;
     bool init_volt_applied[LD_NUMB];
 } gbCfg_t;
+
+/***************** STATUS *******************/
+
+typedef struct {
+    bool enable;
+    unsigned int vin_raw;
+    unsigned int vout_raw;
+    unsigned int cout_raw;
+    unsigned int vin;  // mV
+    unsigned int vout; // mV
+    unsigned int cout; // mA
+    bool constant_current; // If false, we are in constant voltage
+} ldSts_t;
+
+/* The struct below contains all historic data we want to transmit to the website */
+typedef struct {
+    json_t *intens[LD_NUMB]; //pointer to an array for each led intensity
+    json_t *humidity;
+    json_t *rain;
+    json_t *fog;
+    json_t *tAir;
+    json_t *tWater;
+    json_t *vin;
+    json_t *tPS; //Power Supply temp
+} gbHis_t;
+
+typedef struct {
+    int temp_air; //mCelsius
+    int temp_water; //mCelsius
+    int temp_PS; //mCelsius
+    unsigned char humidity_air; //%
+    bool rain;
+    bool fog;
+    ldSts_t ld_sts[LD_NUMB];
+    gbHis_t hist;
+} gbSts_t;
+
+extern gbSts_t Gb_sts;
 
 /***************** EXTERNS *******************/
 

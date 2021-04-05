@@ -1,0 +1,55 @@
+{
+    "ld_instant_mode": false,
+    "ld_instant": {
+        "white": {
+            "enable": false,
+            "vset": 120000,
+            "cset": 100
+        },
+        "blue": {
+            "enable": false,
+            "vset": 20000,
+            "cset": 100
+        },
+        "red": {
+            "enable": false,
+            "vset": 20000,
+            "cset": 100
+        }
+    },
+    "ld_spec": {
+        "white": [
+            0,
+            0,
+            0,
+            75,
+            100,
+            100,
+            75,
+            0,
+            0
+        ],
+        "blue": [
+            0,
+            0,
+            0,
+            80,
+            40,
+            10,
+            0,
+            3,
+            0
+        ],
+        "red": [
+            0,
+            0,
+            0,
+            5,
+            15,
+            40,
+            80,
+            0,
+            0
+        ]
+    }
+}

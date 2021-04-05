@@ -267,6 +267,12 @@ unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc)
        return curr; 
 }
 
+unsigned char get_perc_from_curr(ldBoard_t color, unsigned int curr)
+{
+    if (color >= LD_NUMB) return 0;
+    return (unsigned char) ((curr*100)/(Gb_ld_sys[color].fwd_led_curr));
+}
+
 int ld_serial_init()
 {
 	Fd = serialOpen("/dev/ttyAMA0", 38400);

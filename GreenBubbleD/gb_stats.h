@@ -1,6 +1,6 @@
 /*
- * gb_serial.h:
- *	Serial instructions to communicate with the Led Driveres (ld) for the GreenBubble project
+ * gb_stats.h:
+ *	Configuration handling for GreenBubble project
  *
  * Copyright (c) 2018-2019 Fabiano R. Maioli <frmaioli@gmail.com>
  ***********************************************************************
@@ -19,19 +19,14 @@
  ***********************************************************************
  */
 
-#ifndef GB_SERIAL_H
-#define GB_SERIAL_H
+#ifndef GB_STATS_H
+#define GB_STATS_H
 
-#include "gb_main.h"
+#include <gb_main.h>
 
-int ld_get_system(ldBoard_t color, ldSys_t *sys);
-int ld_get_config(ldBoard_t color, ldCfg_t *cfg);
-int ld_get_status(ldBoard_t color, ldSts_t *sts);
-int ld_set_voltage(ldBoard_t color, unsigned int voltage);
-int ld_set_current(ldBoard_t color, unsigned int current);
-int ld_set_output(ldBoard_t color, bool output);
-int ld_serial_init();
-unsigned int get_curr_from_perc(ldBoard_t color, unsigned char perc);
-unsigned char get_perc_from_curr(ldBoard_t color, unsigned int curr);
+void cfg_big_json_test(gbCfg_t *cfg);
+void gb_stats_init(gbSts_t *sts);
+void gb_stats_decref(gbSts_t *sts);
+void gb_get_status(gbSts_t *sts);
 
-#endif //GB_SERIAL_H
+#endif //GB_STATS_H

@@ -31,6 +31,7 @@
 
 #include <gb_main.h>
 #include <gb_config.h>
+#include <gb_stats.h>
 #include <gb_serial.h>
 #include <gb_rest.h>
 #include <gb_led.h>
@@ -103,6 +104,7 @@ int main()
     memset(&Gb_ld_sys, 0, sizeof(Gb_ld_sys));
     memset(&Gb_sts, 0, sizeof(Gb_sts));
     memset(&Gb_cfg, 0, sizeof(Gb_cfg));
+    gb_stats_init(&Gb_sts);
     
     // Initialiye the Daemon
     daemon_init();
@@ -124,7 +126,6 @@ int main()
     // Load and Apply Config
     cfg_load(&Gb_cfg);
     cfg_apply(&Gb_cfg);
-    cfg_save(&Gb_cfg);  //test TODO: remove
 
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
 
@@ -133,23 +134,15 @@ int main()
 
     while (1)
     {
-        int i;
-
         ld_daily_routine(0);
 
-        //TODO: review the timing, dont need to take status too often
-        FOR_EACH_LED(i)        
-            ld_get_status(i, &Gb_sts.ld_sts[i]);
+        gb_get_status(&Gb_sts);
 
-	//just testing smtg....
-        ld_get_config(LD_WHITE, &Gb_cfg.ld_instant[LD_WHITE]);
-    	debug("config vset: %u cset: %u\n", Gb_cfg.ld_instant[LD_WHITE].vset, Gb_cfg.ld_instant[LD_WHITE].cset);
-
-        sleep (20);
-//        break;
+        sleep (MAIN_LOOP_SEC);
     }
 
     // Terminate the Daemon
+    gb_stats_decref(&Gb_sts);
     rest_ulfius_stop(&ulfius_instance);
     syslog(LOG_NOTICE, "GreenBubble daemon terminated.");
     closelog();
