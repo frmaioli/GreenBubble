@@ -130,13 +130,14 @@ int main()
     syslog(LOG_NOTICE, "GreenBubble daemon started.");
 
     //First call updates immediatly
-    ld_daily_routine(1);
+    ld_daily_routine(true);
+    gb_get_status(&Gb_sts, true);
 
     while (1)
     {
-        ld_daily_routine(0);
+        ld_daily_routine(false);
 
-        gb_get_status(&Gb_sts);
+        gb_get_status(&Gb_sts, false);
 
         sleep (MAIN_LOOP_SEC);
     }

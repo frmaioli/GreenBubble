@@ -124,13 +124,13 @@ static void hist_append(json_t *jarray, unsigned int value)
 }
 
 #define STATUS_TIMER 600 //10min
-void gb_get_status(gbSts_t *sts)
+void gb_get_status(gbSts_t *sts, bool update_now)
 {
     int i;
     static int timer;
 
     timer += MAIN_LOOP_SEC;
-    if (timer >= STATUS_TIMER) {
+    if ((timer >= STATUS_TIMER) || update_now) {
         //Get last data
         FOR_EACH_LED(i)        
             ld_get_status(i, &Gb_sts.ld_sts[i]);

@@ -44,47 +44,13 @@
 /**
  * callback functions declaration
  */
-int callback_hello_world (const struct _u_request * request, struct _u_response * response, void * user_data);
-int callback_ld_enable (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_status (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_charts (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_gb_system (const struct _u_request * request, struct _u_response * response, void * user_data);
-int callback_post_light (const struct _u_request * request, struct _u_response * response, void * user_data);
-int callback_post_cfg (const struct _u_request * request, struct _u_response * response, void * user_data);
+int callback_gb_config (const struct _u_request * request, struct _u_response * response, void * user_data);
+int callback_post_config (const struct _u_request * request, struct _u_response * response, void * user_data);
+int callback_options (const struct _u_request * request, struct _u_response * response, void * user_data);
 int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-/**
- * decode a u_map into a string
- */
-static char * print_map(const struct _u_map * map) {
-  char * line, * to_return = NULL;
-  const char **keys, * value;
-  int len, i;
-  if (map != NULL) {
-    keys = u_map_enum_keys(map);
-    for (i=0; keys[i] != NULL; i++) {
-      value = u_map_get(map, keys[i]);
-      len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((len+1)*sizeof(char));
-      snprintf(line, (len+1), "key is %s, value is %s", keys[i], value);
-      if (to_return != NULL) {
-        len = o_strlen(to_return) + o_strlen(line) + 1;
-        to_return = o_realloc(to_return, (len+1)*sizeof(char));
-        if (o_strlen(to_return) > 0) {
-          strcat(to_return, "\n");
-        }
-      } else {
-        to_return = o_malloc((o_strlen(line) + 1)*sizeof(char));
-        to_return[0] = 0;
-      }
-      strcat(to_return, line);
-      o_free(line);
-    }
-    return to_return;
-  } else {
-    return NULL;
-  }
-}
 
 int rest_ulfius_init (struct _u_instance *instance) {
     if (ulfius_init_instance(instance, PORT, NULL, NULL) != U_OK) {
@@ -98,22 +64,21 @@ int rest_ulfius_init (struct _u_instance *instance) {
     instance->max_post_body_size = 16*1024;
   
     // Endpoint list declaration
-    ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/set/led/@color/enable/@on", 0, &callback_ld_enable, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/status", 0, &callback_gb_status, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/charts", 0, &callback_gb_charts, NULL);
     ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/system", 0, &callback_gb_system, NULL);
-    ulfius_add_endpoint_by_val(instance, "GET", "/helloworld", NULL, 0, &callback_hello_world, NULL);
-    ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/cfg/light", 0, &callback_post_light, NULL);
-    ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/config", 0, &callback_post_cfg, NULL);
+    ulfius_add_endpoint_by_val(instance, "GET", PREFIX, "/config", 0, &callback_gb_config, NULL);
+    ulfius_add_endpoint_by_val(instance, "POST", PREFIX, "/post/config", 0, &callback_post_config, NULL);
+    ulfius_add_endpoint_by_val(instance, "OPTIONS", PREFIX, "/post/config", 0, &callback_options, NULL);
 
-    // Set default headers
-    u_map_put(instance->default_headers, "Access-Control-Allow-Origin", "*"); //Avoid CORS issues, allowing everything. Can be better controlled later.
-    //u_map_put(config->instance->default_headers, "Access-Control-Allow-Credentials", "true");
-    //u_map_put(config->instance->default_headers, "Cache-Control", "no-store");
-    //u_map_put(config->instance->default_headers, "Pragma", "no-cache");
-    //u_map_put(response->map_header, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    //u_map_put(response->map_header, "Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Bearer, Authorization");
-    //u_map_put(response->map_header, "Access-Control-Max-Age", "1800");
+    // Set default headers for CORS
+    u_map_put(instance->default_headers, "Access-Control-Allow-Origin", "*");
+    u_map_put(instance->default_headers, "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    u_map_put(instance->default_headers, "Access-Control-Max-Age", "1800");
+    u_map_put(instance->default_headers, "Access-Control-Allow-Credentials", "true");
+    u_map_put(instance->default_headers, "Cache-Control", "no-store");
+    u_map_put(instance->default_headers, "Pragma", "no-cache");
+    u_map_put(instance->default_headers, "Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Bearer, Authorization");
 
 
     // default_endpoint declaration
@@ -139,11 +104,19 @@ void rest_ulfius_stop (struct _u_instance *instance)
 }
 
 /**
- * Callback function for the web application on /helloworld url call
+ * Default callback function called if no endpoint has a match
  */
-int callback_hello_world (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  ulfius_set_string_body_response(response, 200, "Hello World!");
-  return U_CALLBACK_CONTINUE;
+int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
+    ulfius_set_string_body_response(response, 404, "GreenBubble - Page not found");
+    return U_CALLBACK_CONTINUE;
+}
+
+/**
+ * Before send a Post, web browser send an OPTIONS to confirm CORS. Answer OKwith headers.
+ */
+int callback_options (const struct _u_request * request, struct _u_response * response, void * user_data) {
+    ulfius_set_string_body_response(response, 200, "GreenBubble - Options return");
+    return U_CALLBACK_CONTINUE;
 }
 
 //sends a json
@@ -165,8 +138,8 @@ int callback_gb_charts (const struct _u_request * request, struct _u_response * 
     ulfius_set_json_body_response(response, 200, j_body);
 
     /*Used to debug only */
-//    if (json_dump_file(j_body, "./jsonTime.json", JSON_INDENT(4)) != 0)
-//        syslog(LOG_ERR, "Unable to save config.");
+    //if (json_dump_file(j_body, "./jsonTime.json", JSON_INDENT(4)) != 0)
+    //    syslog(LOG_ERR, "Unable to save config.");
 
     //Do not decref! As it continues to be used.
     return U_CALLBACK_CONTINUE;
@@ -175,40 +148,30 @@ int callback_gb_charts (const struct _u_request * request, struct _u_response * 
 //sends a json
 int callback_gb_status (const struct _u_request * request, struct _u_response * response, void * user_data) {
 
-    json_t * j_body = json_pack("{sisisisis{sisi}s{sisi}s{sisi}}",
+    json_t * j_body = json_pack("{sisisisbsbsisis{sisisi}s{sisisi}s{sisisi}}",
             "temp_air", Gb_sts.temp_air,
             "temp_water", Gb_sts.temp_water,
             "humidity_air", Gb_sts.humidity_air,
+            "rain", Gb_sts.rain,
+            "fog", Gb_sts.fog,
+            "temp_PS", Gb_sts.temp_PS,
             "voltage_in", Gb_sts.ld_sts[LD_WHITE].vin,
             "led_white",
                 "voltage", Gb_sts.ld_sts[LD_WHITE].vout,
                 "current", Gb_sts.ld_sts[LD_WHITE].cout,
+                "intens", get_perc_from_curr(LD_WHITE, Gb_sts.ld_sts[LD_WHITE].cout),
             "led_blue",
                 "voltage", Gb_sts.ld_sts[LD_BLUE].vout,
                 "current", Gb_sts.ld_sts[LD_BLUE].cout,
+                "intens", get_perc_from_curr(LD_BLUE, Gb_sts.ld_sts[LD_BLUE].cout),
             "led_red",
                 "voltage", Gb_sts.ld_sts[LD_RED].vout,
-                "current", Gb_sts.ld_sts[LD_RED].cout);
+                "current", Gb_sts.ld_sts[LD_RED].cout,
+                "intens", get_perc_from_curr(LD_RED, Gb_sts.ld_sts[LD_RED].cout));
 
     ulfius_set_json_body_response(response, 200, j_body);
     json_decref(j_body);
 
-    /* below works too
-  json_t * j_query = json_pack("{sss{sisf}}",
-         "name", "fabiano",
-         "dados",
-            "idade", 36,
-            "altura", 1.76);
-    ulfius_set_json_body_response(response, 200, j_query);
-  
-     below works too
-  json_t * json_body = NULL;
-
-  json_body = json_object();
-  json_object_set_new(json_body, "nbsheep", json_real(1234.567));
-  ulfius_set_json_body_response(response, 200, json_body);
-  json_decref(json_body);
-  */
   return U_CALLBACK_CONTINUE;
 }
 
@@ -253,35 +216,49 @@ int callback_gb_system (const struct _u_request * request, struct _u_response * 
   return U_CALLBACK_CONTINUE;
 }
 
+//sends a json
+int callback_gb_config (const struct _u_request * request, struct _u_response * response, void * user_data) {
+    int i;
+    json_t *array_w = json_array();
+    json_t *array_b = json_array();
+    json_t *array_r = json_array();
+    json_t *j_body;
 
-/* URL/led/@color/enable/@on Ex: led/white/enable/1 */
-int callback_ld_enable (const struct _u_request * request, struct _u_response * response, void * user_data) {
-
-    ldBoard_t color;
-    const char *color_str = u_map_get(request->map_url, "color");
-    bool enable = (strcmp(u_map_get(request->map_url, "on"), "1") == 0) ? 1 : 0;
-
-    if (strcmp(color_str, "white") == 0) {
-        color = LD_WHITE;
-    } else if (strcmp(color_str, "blue") == 0) {
-        color = LD_BLUE;
-    } else if (strcmp(color_str, "red") == 0) {
-        color = LD_RED;
-    } else {
-      response->status = 404;
-      ulfius_set_string_body_response(response, 404, "Led color invalid");
-      return U_CALLBACK_ERROR;
+    for (i = 0; i < ROUT_STEP; i++) {
+        json_array_append_new(array_w, json_integer(Gb_cfg.ld_spec[LD_WHITE][i]));
+        json_array_append_new(array_b, json_integer(Gb_cfg.ld_spec[LD_BLUE][i]));
+        json_array_append_new(array_r, json_integer(Gb_cfg.ld_spec[LD_RED][i]));
     }
-    
-    ld_set_output(color, enable);
-    //check return and change Cfg - to be created
-    
-    syslog(LOG_INFO, "Led color %s: enable state set to %d\n", color_str, enable);
-    ulfius_set_string_body_response(response, 200, "Success Operation");
-    return U_CALLBACK_CONTINUE;
-}
 
-//BETTER THE BELOW WAY
+    j_body = json_pack("{sbs{s{sbsisi}s{sbsisi}s{sbsisi}}s{sososo}}",
+            "ld_instant_mode", Gb_cfg.ld_instant_mode,
+            "ld_instant",
+                "white",
+                    "enable", Gb_cfg.ld_instant[LD_WHITE].enable,
+                    "vset", Gb_cfg.ld_instant[LD_WHITE].vset,
+                    "cset", Gb_cfg.ld_instant[LD_WHITE].cset, 
+                "blue",
+                    "enable", Gb_cfg.ld_instant[LD_BLUE].enable,
+                    "vset", Gb_cfg.ld_instant[LD_BLUE].vset,
+                    "cset", Gb_cfg.ld_instant[LD_BLUE].cset, 
+                "red",
+                    "enable", Gb_cfg.ld_instant[LD_RED].enable,
+                    "vset", Gb_cfg.ld_instant[LD_RED].vset,
+                    "cset", Gb_cfg.ld_instant[LD_RED].cset,
+            "ld_spec",
+                "white", array_w,
+                "blue", array_b,
+                "red", array_r);
+
+    ulfius_set_json_body_response(response, 200, j_body);
+
+    json_decref(j_body);
+    json_decref(array_w);
+    json_decref(array_b);
+    json_decref(array_r);
+
+  return U_CALLBACK_CONTINUE;
+}
 
 /**
  * Callback function that receives a post in json format
@@ -295,7 +272,7 @@ int callback_ld_enable (const struct _u_request * request, struct _u_response * 
  *      "light_spec": [[0, 100, 100, 75, 100, 100, 75, 0, 0], [0, 0, 0, 80, 40, 10, 0, 3, 0],…]
  *}
  */
-int callback_post_light (const struct _u_request * request, struct _u_response * response, void * user_data) {
+int callback_post_config (const struct _u_request * request, struct _u_response * response, void * user_data) {
     
     bool save, instant_mode, enable, en;
     int ret=0, count=0;
@@ -374,7 +351,7 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
     }
 
     if (ret) {
-        response_body = msprintf("Error setting lights: Code %i\n", ret);
+        response_body = msprintf("Error setting config: Code %i\n", ret);
         syslog(LOG_ERR, response_body);
         ulfius_set_string_body_response(response, 500, response_body);
         o_free(response_body);
@@ -382,9 +359,7 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
         return U_CALLBACK_CONTINUE;
     }
 
-    response_body = msprintf("Light Cfg - Save: %d, Inst mode: %d, Enable: %d, W: %d, B: %d, R: %d\n",
-            save, instant_mode, en, Gb_cfg.ld_instant[LD_WHITE].cset, Gb_cfg.ld_instant[LD_BLUE].cset
-            ,Gb_cfg.ld_instant[LD_RED].cset);
+    response_body = msprintf("%s:\nConfig Successfully Applied%s\n", instant_mode ? "Instant Control" : "Spectrum", save ? " and Saved." : ".");
     syslog(LOG_INFO, response_body);
     debug(response_body);
   
@@ -393,258 +368,3 @@ int callback_post_light (const struct _u_request * request, struct _u_response *
     json_decref(json_body_req);
     return U_CALLBACK_CONTINUE;
 }
-
-
-/**
- * Callback function that receives a post in json format
- *{
- *      "name": "Fabiano",
- *      "age": 36
- *}
- */
-int callback_post_cfg (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  json_t * json_body_req = ulfius_get_json_body_request(request, NULL);
-  char * response_body;
-  
-  int age = json_integer_value(json_object_get(json_body_req,"age"));
-  response_body = msprintf("Hello papito!\nAge: %i", age);
-  
-  ulfius_set_string_body_response(response, 200, response_body);
-  o_free(response_body);
-  json_decref(json_body_req);
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Default callback function called if no endpoint has a match
- */
-int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
-    ulfius_set_string_body_response(response, 404, "GreenBubble - Page not found");
-    return U_CALLBACK_CONTINUE;
-}
-
-
-// Next: finish the call to gb_serial, testing errors
-// angharad.c and angharad.service.js are good exemples to continue
-
-
-
-
-
-
-
-
-
-/*-------------------------------------------------------------------*/
-
-#if 0
-/**
- * callback functions declaration
- */
-int callback_get_test (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-int callback_get_empty_response (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-int callback_post_test (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-int callback_all_test_foo (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-int callback_get_cookietest (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data);
-
-/**
- * decode a u_map into a string
- */
-char * print_map(const struct _u_map * map) {
-  char * line, * to_return = NULL;
-  const char **keys, * value;
-  int len, i;
-  if (map != NULL) {
-    keys = u_map_enum_keys(map);
-    for (i=0; keys[i] != NULL; i++) {
-      value = u_map_get(map, keys[i]);
-      len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((len+1)*sizeof(char));
-      snprintf(line, (len+1), "key is %s, value is %s", keys[i], value);
-      if (to_return != NULL) {
-        len = o_strlen(to_return) + o_strlen(line) + 1;
-        to_return = o_realloc(to_return, (len+1)*sizeof(char));
-        if (o_strlen(to_return) > 0) {
-          strcat(to_return, "\n");
-        }
-      } else {
-        to_return = o_malloc((o_strlen(line) + 1)*sizeof(char));
-        to_return[0] = 0;
-      }
-      strcat(to_return, line);
-      o_free(line);
-    }
-    return to_return;
-  } else {
-    return NULL;
-  }
-}
-
-char * read_file(const char * filename) {
-  char * buffer = NULL;
-  long length;
-  FILE * f = fopen (filename, "rb");
-  if (f != NULL) {
-    fseek (f, 0, SEEK_END);
-    length = ftell (f);
-    fseek (f, 0, SEEK_SET);
-    buffer = o_malloc (length + 1);
-    if (buffer != NULL) {
-      fread (buffer, 1, length, f);
-      buffer[length] = '\0';
-    }
-    fclose (f);
-  }
-  return buffer;
-}
-
-int main (int argc, char **argv) {
-  int ret;
-  
-  // Set the framework port number
-  struct _u_instance instance;
-  
-  y_init_logs("simple_example", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting simple_example");
-  
-  if (ulfius_init_instance(&instance, PORT, NULL, NULL) != U_OK) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_init_instance, abort");
-    return(1);
-  }
-  
-  //u_map_put(instance.default_headers, "Access-Control-Allow-Origin", "*");
-  
-  // Maximum body size sent by the client is 1 Kb
-  instance.max_post_body_size = 1024;
-  
-  // Endpoint list declaration
-  ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, NULL, 0, &callback_get_test, NULL);
-  ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/empty", 0, &callback_get_empty_response, NULL);
-  ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/multiple/:multiple/:multiple/:not_multiple", 0, &callback_all_test_foo, NULL);
-  ulfius_add_endpoint_by_val(&instance, "POST", PREFIX, NULL, 0, &callback_post_test, NULL);
-  ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/param/:foo", 0, &callback_all_test_foo, "user data 1");
-  ulfius_add_endpoint_by_val(&instance, "POST", PREFIX, "/param/:foo", 0, &callback_all_test_foo, "user data 2");
-  ulfius_add_endpoint_by_val(&instance, "PUT", PREFIX, "/param/:foo", 0, &callback_all_test_foo, "user data 3");
-  ulfius_add_endpoint_by_val(&instance, "DELETE", PREFIX, "/param/:foo", 0, &callback_all_test_foo, "user data 4");
-  ulfius_add_endpoint_by_val(&instance, "GET", PREFIXCOOKIE, "/:lang/:extra", 0, &callback_get_cookietest, NULL);
-  
-  // default_endpoint declaration
-  ulfius_set_default_endpoint(&instance, &callback_default, NULL);
-  
-  // Start the framework
-  if (argc == 4 && o_strcmp("-secure", argv[1]) == 0) {
-    // If command-line options are -secure <key_file> <cert_file>, then open an https connection
-    char * key_pem = read_file(argv[2]), * cert_pem = read_file(argv[3]);
-    ret = ulfius_start_secure_framework(&instance, key_pem, cert_pem);
-    o_free(key_pem);
-    o_free(cert_pem);
-  } else {
-    // Open an http connection
-    ret = ulfius_start_framework(&instance);
-  }
-  
-  if (ret == U_OK) {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Start %sframework on port %d", ((argc == 4 && o_strcmp("-secure", argv[1]) == 0)?"secure ":""), instance.port);
-    
-    // Wait for the user to press <enter> on the console to quit the application
-    getchar();
-  } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Error starting framework");
-  }
-  y_log_message(Y_LOG_LEVEL_DEBUG, "End framework");
-  
-  y_close_logs();
-  
-  ulfius_stop_framework(&instance);
-  ulfius_clean_instance(&instance);
-  
-  return 0;
-}
-
-/**
- * Callback function that put a "Hello World!" string in the response
- */
-int callback_get_test (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  ulfius_set_string_body_response(response, 200, "Hello World!");
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Callback function that put an empty response and a status 200
- */
-int callback_get_empty_response (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Callback function that put a "Hello World!" and the post parameters send by the client in the response
- */
-int callback_post_test (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  char * post_params = print_map(request->map_post_body);
-  char * response_body = msprintf("Hello World!\n%s", post_params);
-  ulfius_set_string_body_response(response, 200, response_body);
-  o_free(response_body);
-  o_free(post_params);
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Callback function that put "Hello World!" and all the data sent by the client in the response as string (http method, url, params, cookies, headers, post, json, and user specific data in the response
- */
-int callback_all_test_foo (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  char * url_params = print_map(request->map_url), * headers = print_map(request->map_header), * cookies = print_map(request->map_cookie), 
-        * post_params = print_map(request->map_post_body);
-#ifndef _WIN32
-  char * response_body = msprintf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\nclient address is %s\n\n",
-                                  request->http_verb, request->http_url, url_params, cookies, headers, post_params, (char *)user_data, inet_ntoa(((struct sockaddr_in *)request->client_address)->sin_addr));
-#else
-  char * response_body = msprintf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\n",
-                                  request->http_verb, request->http_url, url_params, cookies, headers, post_params, (char *)user_data);
-#endif
-  ulfius_set_string_body_response(response, 200, response_body);
-  o_free(url_params);
-  o_free(headers);
-  o_free(cookies);
-  o_free(post_params);
-  o_free(response_body);
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Callback function that sets cookies in the response
- * The counter cookie is incremented every time the client reloads this url
- */
-int callback_get_cookietest (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  const char * lang = u_map_get(request->map_url, "lang"), * extra = u_map_get(request->map_url, "extra"), 
-             * counter = u_map_get(request->map_cookie, "counter");
-  char new_counter[8];
-  int i_counter;
-  
-  if (counter == NULL) {
-    i_counter = 0;
-  } else {
-    i_counter = strtol(counter, NULL, 10);
-    i_counter++;
-  }
-  snprintf(new_counter, 7, "%d", i_counter);
-  ulfius_add_cookie_to_response(response, "lang", lang, NULL, 0, NULL, NULL, 0, 0);
-  ulfius_add_cookie_to_response(response, "extra", extra, NULL, 0, NULL, NULL, 0, 0);
-  ulfius_add_cookie_to_response(response, "counter", new_counter, NULL, 0, NULL, NULL, 0, 0);
-  ulfius_set_string_body_response(response, 200, "Cookies set!");
-  
-  return U_CALLBACK_CONTINUE;
-}
-
-/**
- * Default callback function called if no endpoint has a match
- */
-int callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  ulfius_set_string_body_response(response, 404, "Page not found, do what you want");
-  return U_CALLBACK_CONTINUE;
-}
-#endif

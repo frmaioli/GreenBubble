@@ -27,6 +27,6 @@
 void cfg_big_json_test(gbCfg_t *cfg);
 void gb_stats_init(gbSts_t *sts);
 void gb_stats_decref(gbSts_t *sts);
-void gb_get_status(gbSts_t *sts);
+void gb_get_status(gbSts_t *sts, bool update_now);
 
 #endif //GB_STATS_H
