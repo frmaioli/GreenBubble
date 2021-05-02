@@ -27,14 +27,13 @@
 #include <sys/stat.h>
 #include <syslog.h>
 
-#include <wiringPi.h>
-
 #include <gb_main.h>
 #include <gb_config.h>
 #include <gb_stats.h>
 #include <gb_serial.h>
 #include <gb_rest.h>
 #include <gb_led.h>
+#include <gb_gpio.h>
 
 //Global GreenBubble entities
 ldSys_t Gb_ld_sys[LD_NUMB];
@@ -108,8 +107,9 @@ int main()
     
     // Initialiye the Daemon
     daemon_init();
-    // Initialiye the WiringPi library
-    wiringPiSetupGpio();
+
+    // Initialize WiringPi and Pins
+    gb_gpio_init();
 
     // Initialiye the UART to communicate with Led Drivers
     if (ld_serial_init() < 0)

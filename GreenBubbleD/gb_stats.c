@@ -23,11 +23,13 @@
 #include <syslog.h>
 #include <jansson.h>
 #include <sys/time.h>
+#include <wiringPi.h>
 
 #include <gb_stats.h>
 #include <gb_led.h>
 #include <gb_main.h>
 #include <gb_serial.h>
+#include <gb_gpio.h>
 
 void cfg_big_json_test(gbCfg_t *cfg)
 {
@@ -131,10 +133,20 @@ void gb_get_status(gbSts_t *sts, bool update_now)
 
     timer += MAIN_LOOP_SEC;
     if ((timer >= STATUS_TIMER) || update_now) {
-        //Get last data
+        /* Get last data */
+        //Leds
         FOR_EACH_LED(i)        
             ld_get_status(i, &Gb_sts.ld_sts[i]);
 
+        //DS18B20 Sensors
+        sts->temp_PS    = analogRead(DS18_01)*10;
+        sts->temp_water = analogRead(DS18_02)*10;
+
+        //DHT22 Sensor
+        sts->temp_air     = analogRead(DHT22_01)*10;
+        sts->humidity_air = analogRead(DHT22_01+1);
+
+        /* Append all into the history */
         FOR_EACH_LED(i)        
             hist_append(sts->hist.intens[i], get_perc_from_curr(i, sts->ld_sts[i].cout));
 

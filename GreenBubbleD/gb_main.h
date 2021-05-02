@@ -40,35 +40,6 @@
 
 #define MAIN_LOOP_SEC 30
 
-typedef enum {
-    GPIO_02 = 2, // I2C SDA
-    GPIO_03 = 3, // I2C SCL
-    GPIO_04 = 4,
-    GPIO_05 = 5,
-    GPIO_06 = 6,
-    GPIO_07 = 7, // SPI0 CE1
-    GPIO_08 = 8, // SPI0 CE0
-    GPIO_09 = 9, // SPI0 MISO
-    GPIO_10 = 10, // SPI0 MOSI
-    GPIO_11 = 11, // SPI0 SCLK
-    GPIO_12 = 12, // HW PWM
-    GPIO_13 = 13, // HW PWM
-    GPIO_14 = 14, // UART TX - Used as UART TX to the Led Drivers
-    GPIO_15 = 15, // UART RX - Used as UART RX to the Led Drivers
-    GPIO_16 = 16, // SPI1 CE2
-    GPIO_17 = 17, // SPI1 CE1             - Used as GPIO to Led Drivers Chip Select 0
-    GPIO_18 = 18, // SPI1 CE0 or HW PWM   - Used as GPIO to Led Drivers Chip Select 1
-    GPIO_19 = 19, // SPI1 MISO or HW PWM
-    GPIO_20 = 20, // SPI1 MOSI
-    GPIO_21 = 21, // SPI1 SCLK
-    GPIO_22 = 22,
-    GPIO_23 = 23,
-    GPIO_24 = 24,
-    GPIO_25 = 25,
-    GPIO_26 = 26,
-    GPIO_27 = 27
-} PiGpio_t;
-
 #define LD_NUMB 3
 #define FOR_EACH_LED(x) for (x = 0; x < LD_NUMB; x++)
 typedef enum {

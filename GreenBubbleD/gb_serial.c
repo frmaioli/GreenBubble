@@ -27,6 +27,7 @@
 
 #include "gb_serial.h"
 #include "gb_main.h"
+#include "gb_gpio.h"
 
 #define CHECK(x) if ((Fd < 0) || (x >= LD_NUMB) || (Gb_ld_sys[x].device_ok == false)) return -1
 
@@ -38,18 +39,18 @@ static void ld_select_driver(ldBoard_t color)
 {
     switch (color) {
         case LD_WHITE:
-            digitalWrite(GPIO_17, LOW);
-            digitalWrite(GPIO_18, LOW);
+            digitalWrite(BCM_22, LOW);
+            digitalWrite(BCM_23, LOW);
             strcpy(Driver, "LED_WHITE");
             break;
         case LD_BLUE:
-            digitalWrite(GPIO_17, LOW);
-            digitalWrite(GPIO_18, HIGH);
+            digitalWrite(BCM_22, LOW);
+            digitalWrite(BCM_23, HIGH);
             strcpy(Driver, "LED_BLUE");
             break;
         case LD_RED:
-            digitalWrite(GPIO_17, HIGH);
-            digitalWrite(GPIO_18, LOW);
+            digitalWrite(BCM_22, HIGH);
+            digitalWrite(BCM_23, LOW);
             strcpy(Driver, "LED_RED");
             break;
     }
